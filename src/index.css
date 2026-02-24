@@ -1,0 +1,64 @@
+/* src/index.css */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+@import "tailwindcss";
+
+@theme {
+  /* --- PALETA CORPORATIVA: AQUA, BLANCO Y GRIS SLATE --- */
+  
+  /* Fondos y Superficies */
+  --color-eco-bg: #f1f5f9; /* Gris muy sutil para el fondo principal (Slate 50) */
+  --color-eco-surface: #ffffff; /* Blanco puro para tarjetas y tablas */
+  --color-eco-sidebar: #1e293b; /* Gris oscuro corporativo (Slate 800) para el Sidebar */
+  --color-eco-border: #e2e8f0; /* Bordes suaves */
+  
+  /* Textos */
+  --color-eco-text-primary: #334155; /* Slate 700 */
+  --color-eco-text-secondary: #64748b; /* Slate 500 */
+  
+  /* Color de Marca: Aqua Cielo */
+  --color-eco-accent: #00B4D8; 
+  --color-eco-accent-hover: #0096b4; 
+  --color-eco-accent-light: #e0f7fa;
+
+  --font-sans: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+}
+
+/* Regla global: cursor "manito" para TODO lo interactivo */
+@layer base {
+  button, a, select, input[type="checkbox"], input[type="radio"], [role="button"], summary {
+    cursor: pointer !important;
+  }
+  
+  input[type="text"], input[type="number"], input[type="password"], textarea {
+    cursor: text;
+  }
+}
+
+body {
+  background-color: var(--color-eco-bg);
+  color: var(--color-eco-text-primary);
+}
+
+@layer components {
+  /* Botón primario Aqua Cielo */
+  .clean-btn-primary {
+    @apply bg-eco-accent text-white text-[14px] font-medium px-4 py-2 rounded-md
+           hover:bg-eco-accent-hover transition-all flex items-center gap-2 justify-center shadow-sm;
+  }
+
+  /* Botón secundario Blanco/Gris */
+  .clean-btn-secondary {
+    @apply bg-white text-gray-700 border border-gray-300 text-[14px] font-medium px-4 py-2 rounded-md
+           hover:bg-gray-50 transition-all flex items-center gap-2 justify-center shadow-sm;
+  }
+
+  /* Cabeceras de tabla corporativas limpias */
+  .clean-table-header {
+    @apply text-left text-[12px] font-semibold text-gray-500 uppercase tracking-wider px-4 py-3 border-y border-eco-border bg-gray-50/50;
+  }
+  
+  /* Filas de tabla */
+  .clean-table-row {
+    @apply border-b border-gray-100 hover:bg-eco-accent-light/40 transition-colors duration-150 bg-white;
+  }
+}
