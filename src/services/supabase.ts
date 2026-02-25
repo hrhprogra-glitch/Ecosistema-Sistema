@@ -8,13 +8,14 @@ export interface Cliente {
   telefono: string;
   ubicacion_link: string;
   cotizaciones_historial?: { id: number }[];
+  dni_ruc?: string; // Opcional para evitar errores si no existe en BD
 }
 
 export interface UsuarioSistema {
   id?: number;
   email: string;
   password?: string;
-  username?: string; // Añadido para coincidir con la lógica de PersonalTab
+  username?: string;
   role: 'admin' | 'trabajador'; 
   full_name: string;
   permisos?: string[];
@@ -29,6 +30,7 @@ export interface CotizacionHistorial {
   nota?: string;
   detalles?: any[]; 
   created_at?: string;
+  pagos?: Pago[]; // Para soportar la lectura de abonos
 }
 
 export interface Pago {
@@ -48,7 +50,7 @@ export interface Obra {
   cliente_id: number;
   estado: string;
   costo_acumulado: number;
-  monto_pagado?: number; // Añadido para coincidir con ObrasTab
+  monto_pagado?: number;
   direccion_link?: string;
   fecha_inicio?: string;
   materiales_asignados?: any[];
@@ -152,7 +154,6 @@ export const usuariosService = {
     if (error) throw error;
     return data[0];
   },
-  // MÉTODOS AÑADIDOS PARA CORREGIR EL ERROR EN PERSONALTAB
   async actualizar(id: number, usuario: any) {
     const { data, error } = await supabase.from('usuarios').update(usuario).eq('id', id).select();
     if (error) throw error;
@@ -165,10 +166,11 @@ export const usuariosService = {
   }
 };
 
-// --- SERVICIO DE FINANZAS ---
+// --- SERVICIO DE FINANZAS (MODIFICADO) ---
 export const finanzasService = {
   async registrarCotizacion(cotizacion: CotizacionHistorial) {
-    const { data, error } = await supabase.from('cotizaciones_historial').insert([cotizacion]).select();
+    // Cambiado insert por upsert para permitir la edición desde el generador
+    const { data, error } = await supabase.from('cotizaciones_historial').upsert([cotizacion]).select();
     if (error) throw error;
     return data[0];
   },
@@ -184,8 +186,9 @@ export const finanzasService = {
     if (errEstado) throw errEstado;
   },
   async listarCotizacionesTodas() {
+    // Modificado para traer pagos(*) y evitar error 400 por dni_ruc inexistente
     const { data, error } = await supabase.from('cotizaciones_historial')
-      .select('*, clientes(nombre_cliente)')
+      .select('*, clientes(nombre_cliente), pagos(*)')
       .order('created_at', { ascending: false });
     if (error) throw error;
     return data;
@@ -193,5 +196,16 @@ export const finanzasService = {
   async actualizarEstadoCotizacion(id: number, estado: string) {
     const { error } = await supabase.from('cotizaciones_historial').update({ estado }).eq('id', id);
     if (error) throw error;
+  },
+  // NUEVOS MÉTODOS PARA GESTIÓN DE ABONOS
+  async actualizarPago(id: number, cambios: { monto_pagado: number; metodo: string }) {
+    const { data, error } = await supabase.from('pagos').update(cambios).eq('id', id).select();
+    if (error) throw error;
+    return data[0];
+  },
+  async eliminarPago(id: number) {
+    const { error } = await supabase.from('pagos').delete().eq('id', id);
+    if (error) throw error;
+    return true;
   }
 };
