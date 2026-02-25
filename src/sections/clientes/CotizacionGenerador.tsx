@@ -45,6 +45,7 @@ export const CotizacionGenerador = ({ clientes, productos, cotizacionPrevia, onS
   const [monedaActual, setMonedaActual] = useState('S/'); // Estado para moneda
   const [itemEnEdicion, setItemEnEdicion] = useState<{ grupoId: number, itemId: number } | null>(null);  
   const [monedaGlobal, setMonedaGlobal] = useState('S/'); // Controla el valor por defecto
+  const [unidadActual, setUnidadActual] = useState('UND');
   const jumpTo = (id: string, cursorAtEnd = false) => {
     setTimeout(() => {
       const el = document.getElementById(id) as HTMLInputElement | HTMLTextAreaElement;
@@ -139,6 +140,7 @@ export const CotizacionGenerador = ({ clientes, productos, cotizacionPrevia, onS
     setProdBusqueda(''); 
     setCantidad(1); 
     setPrecioEditable(0);
+    setUnidadActual('UND');
     setMostrarListadoProd(false); 
     setItemEnEdicion(null);
     setMonedaActual(monedaGlobal);
@@ -161,6 +163,7 @@ export const CotizacionGenerador = ({ clientes, productos, cotizacionPrevia, onS
     setProdSelect(productoBase);
     setProdBusqueda(item.producto);
     setCantidad(item.cantidad);
+    setUnidadActual(item.unidad);
     setPrecioEditable(item.precioUnit);
     setMonedaActual(item.moneda);
     setItemEnEdicion({ grupoId, itemId: item.id });
@@ -508,21 +511,38 @@ export const CotizacionGenerador = ({ clientes, productos, cotizacionPrevia, onS
 
                       {prodSelect && grupoActivoId === grupo.id && (
                         <div className="flex gap-2 p-2 bg-blue-50 border border-blue-100 animate-in zoom-in-95">
-                          <div className="w-20">
-                            <label className="text-[9px] font-bold text-slate-400 uppercase block mb-1">Cant.</label>
-                            <input id={`input-cant-${grupo.id}`} type="number" className={`${inputModerno} text-center`} value={cantidad} 
-                              onChange={e => setCantidad(e.target.value)} onFocus={(e) => e.target.select()}
-                              onKeyDown={(e) => {
-                                if (e.key === 'Enter' || e.key === 'ArrowRight') { e.preventDefault(); jumpTo(`select-moneda-${grupo.id}`); }
-                                if (e.key === 'ArrowDown') { 
-  e.preventDefault(); 
-  if (grupo.items.length > 0) jumpTo(`item-row-${grupo.id}-0`); // <--- Salta a la lista
-  else jumpTo('input-notas'); 
-}
-                                if (e.key === 'ArrowUp') { e.preventDefault(); jumpTo(`input-prod-${grupo.id}`, true); }
-                              }} 
-                            />
-                          </div>
+                          <div className="w-32">
+  <label className="text-[9px] font-bold text-slate-400 uppercase block mb-1">Cant. / Unidad</label>
+  <div className="flex gap-0.5">
+    <input 
+      id={`input-cant-${grupo.id}`} 
+      type="number" 
+      className={`${inputModerno} text-center px-1`} 
+      value={cantidad} 
+      onChange={e => setCantidad(e.target.value)} 
+      onFocus={(e) => e.target.select()}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter' || e.key === 'ArrowRight') { e.preventDefault(); jumpTo(`select-unidad-${grupo.id}`); }
+        if (e.key === 'ArrowUp') { e.preventDefault(); jumpTo(`input-prod-${grupo.id}`, true); }
+      }} 
+    />
+    <select
+      id={`select-unidad-${grupo.id}`}
+      className="bg-white border border-slate-300 text-[10px] font-bold outline-none focus:ring-1 focus:ring-[#00B4D8] cursor-pointer"
+      value={unidadActual}
+      onChange={(e) => setUnidadActual(e.target.value)}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter' || e.key === 'ArrowRight') { e.preventDefault(); jumpTo(`select-moneda-${grupo.id}`); }
+        if (e.key === 'ArrowLeft') { e.preventDefault(); jumpTo(`input-cant-${grupo.id}`); }
+      }}
+    >
+      <option value="UND">UND</option>
+      <option value="METROS">MTS</option>
+      <option value="KILOS">KG</option>
+      <option value="GLN">GLN</option>
+    </select>
+  </div>
+</div>
                           <div className="flex-1">
                             <label className="text-[9px] font-bold text-slate-400 uppercase block mb-1">Precio Unit.</label>
                             <div className="flex gap-1">
@@ -614,30 +634,43 @@ export const CotizacionGenerador = ({ clientes, productos, cotizacionPrevia, onS
         <div className="bg-white border border-slate-200 p-6 shadow-sm">
             <label className="block text-[10px] font-black text-slate-400 uppercase mb-1">Observaciones / Notas Finales</label>
             <textarea 
-              id="input-notas" 
-              className={`${inputModerno} min-h-[60px]`} 
-              value={nota} 
-              onChange={e => setNota(e.target.value)}
-              onKeyDown={(e) => {
-                // Si está arriba de todo, va al grupo
-                if (e.key === 'ArrowUp' && e.currentTarget.selectionStart === 0) {
-                  e.preventDefault();
-                  jumpTo('btn-add-grupo');
-                } 
-                // Si presiona abajo y está al final del texto (o está vacío)
-                else if (e.key === 'ArrowDown') {
-                  if (e.currentTarget.selectionEnd === e.currentTarget.value.length) {
-                    e.preventDefault();
-                    jumpTo('btn-registrar');
-                  }
-                } 
-                // Si presiona Enter, guarda automáticamente
-                else if (e.key === 'Enter') {
-                  e.preventDefault();
-                  document.getElementById('btn-registrar')?.click();
-                }
-              }}
-            />
+  id="input-notas" 
+  className={`${inputModerno} min-h-[60px]`} 
+  value={nota} 
+  onChange={e => setNota(e.target.value)}
+  onKeyDown={(e) => {
+    // MODIFICADO: Lógica inteligente para subir con la flecha
+    if (e.key === 'ArrowUp' && e.currentTarget.selectionStart === 0) {
+      e.preventDefault();
+      
+      // Buscamos el último grupo que tenga ítems
+      const ultimoGrupoConItems = [...grupos].reverse().find(g => g.items.length > 0);
+      
+      if (ultimoGrupoConItems) {
+        // Si hay ítems, saltamos al último ítem del último grupo
+        const ultimoIndex = ultimoGrupoConItems.items.length - 1;
+        jumpTo(`item-row-${ultimoGrupoConItems.id}-${ultimoIndex}`);
+      } else if (grupos.length > 0) {
+        // Si no hay ítems pero hay grupos, saltamos al buscador del primer grupo
+        jumpTo(`input-prod-${grupos[0].id}`);
+      } else {
+        // Por defecto, si todo falla, al botón de agregar grupo
+        jumpTo('btn-add-grupo');
+      }
+    } 
+    // Lógica para flecha abajo y Enter se mantiene igual...
+    else if (e.key === 'ArrowDown') {
+      if (e.currentTarget.selectionEnd === e.currentTarget.value.length) {
+        e.preventDefault();
+        jumpTo('btn-registrar');
+      }
+    } 
+    else if (e.key === 'Enter') {
+      e.preventDefault();
+      document.getElementById('btn-registrar')?.click();
+    }
+  }}
+/>
         </div>
 
         <div className="bg-[#1e293b] p-6 border-b-8 border-[#00B4D8] text-center shadow-xl">
