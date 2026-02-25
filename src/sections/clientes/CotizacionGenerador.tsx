@@ -2,7 +2,8 @@ import { useState, useEffect } from 'react';
 import { finanzasService } from '../../services/supabase';
 import type { Cliente } from '../../services/supabase';
 import { Plus, Trash2, Save, Loader2, ChevronDown, Check } from 'lucide-react';
-
+import html2canvas from 'html2canvas-pro';
+import { jsPDF } from 'jspdf';
 interface ProductoInventario { id: number; codigo: string; producto: string; unidad_medida: string; precio: number; }
 interface QuoteItem { 
   id: number; 
@@ -167,7 +168,21 @@ export const CotizacionGenerador = ({ clientes, productos, cotizacionPrevia, onS
       await finanzasService.registrarCotizacion(datosCotizacion);
       
       alert("✅ Guardado exitosamente.");
-      window.print(); 
+      // Generar y descargar el PDF automáticamente
+      const paginasHtml = document.querySelectorAll('.hoja-imprimible');
+      if (paginasHtml.length > 0) {
+        const pdf = new jsPDF('p', 'pt', 'a4');
+        for (let i = 0; i < paginasHtml.length; i++) {
+          const canvas = await html2canvas(paginasHtml[i] as HTMLElement, { scale: 2 });
+          const imgData = canvas.toDataURL('image/png');
+          const pdfWidth = pdf.internal.pageSize.getWidth();
+          const pdfHeight = pdf.internal.pageSize.getHeight();
+          
+          if (i > 0) pdf.addPage();
+          pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
+        }
+        pdf.save(`Cotizacion_${clienteSelect.nombre_cliente}.pdf`);
+      } 
       onSuccess();
       
     } catch (error) { 
@@ -471,7 +486,7 @@ export const CotizacionGenerador = ({ clientes, productos, cotizacionPrevia, onS
       {/* VISTA PREVIA HOJA A4 */}
       <div className="lg:col-span-7 bg-[#f1f5f9] flex flex-col items-center gap-8 p-10 overflow-y-auto border border-slate-200 h-[calc(100vh-160px)] min-h-[850px] shadow-inner">
           {paginas.map((pagina, pageIndex) => (
-            <div key={pageIndex} className="bg-white text-black w-[595px] h-[842px] shrink-0 shadow-2xl p-8 relative flex flex-col font-sans border-t-[10px] border-[#1e293b]">
+            <div key={pageIndex} className="hoja-imprimible bg-white text-black w-[595px] h-[842px] shrink-0 shadow-2xl p-8 relative flex flex-col font-sans border-t-[10px] border-[#1e293b]">
                 <div className="text-center mb-4 border-b border-[#1e293b] pb-4">
                     <h1 className="text-xl font-black text-[#1e293b]">ECO SISTEMAS URH SAC</h1>
                     <p className="text-[9px] font-bold text-slate-600 uppercase">Mz A LT 9 A.V NUEVA GALES CIENEGUILLA</p>
