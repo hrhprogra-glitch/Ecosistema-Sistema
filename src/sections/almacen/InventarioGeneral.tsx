@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Search, Plus, Package, Edit2, Trash2, X, Loader2, Save, Tag, DollarSign, Layers, AlertTriangle, CheckCircle, Clock, Settings, Printer, AlertCircle, PackagePlus, History, Calculator, CalendarClock } from 'lucide-react';
+import { Search, Plus, Package, Edit2, Trash2, X, Loader2, Save, DollarSign, AlertTriangle, Printer, AlertCircle, PackagePlus, History, Calculator, CalendarClock } from 'lucide-react';
 import { inventarioService } from '../../services/supabase';
 
 // --- INTERFACES ---

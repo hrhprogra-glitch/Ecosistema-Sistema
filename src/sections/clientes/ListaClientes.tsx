@@ -1,10 +1,10 @@
+// src/sections/clientes/ListaClientes.tsx
 import { useState, useEffect } from 'react';
 import { clientesService } from '../../services/supabase'; 
 import type { Cliente } from '../../services/supabase';
-import { Search, Plus, Edit2, Trash2, Loader2, MapPin, ExternalLink, Phone, ArrowRight } from 'lucide-react';
+import { Search, Plus, Edit2, Trash2, Loader2, MapPin, ExternalLink, Phone, ArrowRight, UserSquare2 } from 'lucide-react';
 import { ClienteFormModal } from './ClienteFormModal';
 
-// Extendemos la interfaz para que TS reconozca los campos adicionales
 interface ClienteExtendido extends Cliente {
   dni?: string;
 }
@@ -49,83 +49,90 @@ export const ListaClientes = ({ onVerHistorial }: ListaClientesProps) => {
 
   return (
     <div className="w-full animate-in fade-in duration-300">
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
-        <div>
-          <h2 className="text-xl font-bold text-slate-800 uppercase tracking-tight">Directorio de Clientes</h2>
-          <p className="text-sm text-slate-500 font-medium">Gestión de contactos y expedientes.</p>
+      {/* HEADER DE SECCIÓN - SQUARE STYLE */}
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4 bg-white p-6 border-l-8 border-[#00B4D8] shadow-sm">
+        <div className="flex items-center gap-4">
+          <div className="bg-[#1e293b] p-2">
+            <UserSquare2 className="text-[#00B4D8]" size={24} />
+          </div>
+          <div>
+            <h2 className="text-2xl font-black text-[#1e293b] uppercase tracking-tighter">Directorio de Clientes</h2>
+            <p className="text-[10px] text-slate-400 font-bold uppercase tracking-[0.2em] mt-1">Gestión de Cartera & Expedientes</p>
+          </div>
         </div>
         <button 
           onClick={() => { setClienteSelect(null); setShowForm(true); }} 
-          className="bg-[#00B4D8] hover:bg-[#0096b4] text-white px-5 py-2.5 flex items-center gap-2 rounded-xl font-bold text-xs uppercase shadow-lg shadow-[#00B4D8]/20"
+          className="bg-[#00B4D8] text-white px-6 py-3 flex items-center gap-2 font-black text-[11px] uppercase tracking-widest hover:bg-[#1e293b] transition-all shadow-md"
         >
-          <Plus size={18} /> Nuevo Cliente
+          <Plus size={18} /> Registrar Cliente
         </button>
       </div>
 
-      <div className="bg-white border border-slate-200 rounded-3xl shadow-sm overflow-hidden">
-        <div className="p-4 border-b border-slate-200">
-          <div className="relative w-full md:w-80">
-            <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+      <div className="bg-white border border-slate-200 shadow-sm overflow-hidden">
+        {/* BUSCADOR - HIGH CONTRAST */}
+        <div className="p-5 border-b border-slate-200 bg-slate-50/50">
+          <div className="relative w-full md:w-96">
+            <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
             <input 
-              placeholder="Buscar por nombre o DNI..." 
-              className="w-full bg-slate-50 border border-slate-200 rounded-xl py-2.5 pl-9 pr-4 text-sm font-bold outline-none focus:ring-2 ring-[#00B4D8]/20"
+              placeholder="BUSCAR POR NOMBRE O DNI..." 
+              className="w-full bg-white border border-slate-300 py-3 pl-12 pr-4 text-[13px] font-black uppercase tracking-tight outline-none focus:border-[#00B4D8] transition-all"
               value={busqueda}
               onChange={e => setBusqueda(e.target.value)}
             />
           </div>
         </div>
 
-        <div className="overflow-x-auto">
+        <div className="overflow-x-auto min-h-[400px]">
           <table className="w-full text-left">
             <thead>
-              <tr className="bg-slate-50 border-b border-slate-200 text-[10px] font-black text-slate-400 uppercase tracking-widest">
-                <th className="py-4 px-6">ID</th>
-                <th className="py-4 px-4">Cliente</th>
-                <th className="py-4 px-4">Teléfono</th>
-                <th className="py-4 px-4">Ubicación</th>
-                <th className="py-4 px-4">Historial</th>
-                <th className="py-4 px-6 text-right">Acciones</th>
+              <tr className="bg-white border-b-2 border-slate-100 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">
+                <th className="py-5 px-8">Código</th>
+                <th className="py-5 px-4">Titular del Cliente</th>
+                <th className="py-5 px-4">Contacto</th>
+                <th className="py-5 px-4">Ubicación</th>
+                <th className="py-5 px-4">Expedientes</th>
+                <th className="py-5 px-8 text-right">Gestión</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100">
+            <tbody className="divide-y divide-slate-50">
               {loading ? (
-                <tr><td colSpan={6} className="py-20 text-center"><Loader2 className="animate-spin mx-auto text-[#00B4D8]" /></td></tr>
+                <tr><td colSpan={6} className="py-20 text-center"><Loader2 className="animate-spin mx-auto text-[#00B4D8]" size={32}/></td></tr>
               ) : filtrados.map((c) => (
-                <tr key={c.id} className="hover:bg-slate-50/50 transition-colors">
-                  <td className="py-4 px-6 font-mono text-xs font-bold text-slate-400">CL-{String(c.id).padStart(4, '0')}</td>
-                  <td className="py-4 px-4">
+                <tr key={c.id} className="hover:bg-[#f8fafc] transition-colors group">
+                  <td className="py-5 px-8 font-mono text-[12px] font-black text-[#00B4D8]">CL-{String(c.id).padStart(4, '0')}</td>
+                  <td className="py-5 px-4">
                     <div className="flex flex-col">
-                      <span className="font-black text-sm text-slate-800 uppercase">{c.nombre_cliente}</span>
-                      <span className="text-[10px] text-slate-400">DNI: {c.dni || '---'}</span>
+                      <span className="font-black text-[14px] text-[#1e293b] uppercase group-hover:text-[#00B4D8] transition-colors">{c.nombre_cliente}</span>
+                      <span className="text-[10px] text-slate-400 font-bold tracking-widest mt-1">DNI/RUC: {c.dni || 'NO REGISTRADO'}</span>
                     </div>
                   </td>
-                  <td className="py-4 px-4">
-                    <div className="flex items-center gap-2 text-slate-600 font-bold text-xs">
-                      <Phone size={14} className="text-[#00B4D8]"/> {c.telefono || 'N/A'}
+                  <td className="py-5 px-4">
+                    <div className="flex items-center gap-2 text-[#1e293b] font-black text-[12px]">
+                      <Phone size={14} className="text-[#00B4D8]"/> {c.telefono || 'S/N'}
                     </div>
                   </td>
-                  <td className="py-4 px-4">
-                    <div className="flex flex-col max-w-[180px]">
-                      <span className="text-xs text-slate-600 truncate font-medium">{c.direccion || 'Sin dirección'}</span>
+                  <td className="py-5 px-4">
+                    <div className="flex flex-col max-w-[200px]">
+                      <span className="text-[11px] text-slate-500 uppercase font-bold truncate" title={c.direccion}>{c.direccion || 'DIRECCIÓN NO ASIGNADA'}</span>
                       {c.ubicacion_link && (
-                        <a href={c.ubicacion_link} target="_blank" rel="noreferrer" className="text-[10px] text-[#00B4D8] font-black flex items-center gap-1 hover:underline">
-                          <MapPin size={10}/> MAPS <ExternalLink size={10}/>
+                        <a href={c.ubicacion_link} target="_blank" rel="noreferrer" className="text-[9px] text-[#00B4D8] font-black flex items-center gap-1 hover:text-[#1e293b] mt-1 transition-colors">
+                          <MapPin size={10}/> VER EN GOOGLE MAPS <ExternalLink size={10}/>
                         </a>
                       )}
                     </div>
                   </td>
-                  <td className="py-4 px-4">
+                  <td className="py-5 px-4">
                     <button 
                       onClick={() => onVerHistorial(c)} 
-                      className="text-[#00B4D8] hover:text-[#0096b4] text-xs font-black uppercase flex items-center gap-1 group"
+                      className="text-[#1e293b] hover:text-[#00B4D8] text-[10px] font-black uppercase tracking-widest flex items-center gap-2 border-b-2 border-transparent hover:border-[#00B4D8] transition-all pb-1"
                     >
-                      Ver Expediente <ArrowRight size={14} className="group-hover:translate-x-1 transition-transform"/>
+                      Expediente <ArrowRight size={14} />
                     </button>
                   </td>
-                  <td className="py-4 px-6 text-right">
-                    <div className="flex justify-end gap-2">
-                      <button onClick={() => { setClienteSelect(c); setShowForm(true); }} className="p-2 text-slate-400 hover:text-[#00B4D8] rounded-lg hover:bg-[#E0F7FA] transition-colors"><Edit2 size={16}/></button>
-                      <button onClick={() => eliminarCliente(c.id!)} className="p-2 text-slate-400 hover:text-rose-500 rounded-lg hover:bg-rose-50 transition-colors"><Trash2 size={16}/></button>
+                  <td className="py-5 px-8 text-right">
+                    <div className="flex justify-end gap-3 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <button onClick={() => { setClienteSelect(c); setShowForm(true); }} className="p-2 text-slate-400 hover:text-[#00B4D8] transition-colors"><Edit2 size={16}/></button>
+                      <button onClick={() => eliminarCliente(c.id!)} className="p-2 text-slate-400 hover:text-red-500 transition-colors"><Trash2 size={16}/></button>
                     </div>
                   </td>
                 </tr>

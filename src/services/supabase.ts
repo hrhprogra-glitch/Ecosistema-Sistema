@@ -14,6 +14,7 @@ export interface UsuarioSistema {
   id?: number;
   email: string;
   password?: string;
+  username?: string; // Añadido para coincidir con la lógica de PersonalTab
   role: 'admin' | 'trabajador'; 
   full_name: string;
   permisos?: string[];
@@ -24,7 +25,7 @@ export interface CotizacionHistorial {
   cliente_id: number;
   fecha_emision: string;
   monto_total: number;
-  estado: 'Pendiente' | 'Aprobado' | 'Rechazado' | 'Parcial' | 'Completado'; // <--- Añadido Aprobado y Rechazado
+  estado: 'Pendiente' | 'Aprobado' | 'Rechazado' | 'Parcial' | 'Completado';
   nota?: string;
   detalles?: any[]; 
   created_at?: string;
@@ -47,9 +48,13 @@ export interface Obra {
   cliente_id: number;
   estado: string;
   costo_acumulado: number;
+  monto_pagado?: number; // Añadido para coincidir con ObrasTab
+  direccion_link?: string;
+  fecha_inicio?: string;
   materiales_asignados?: any[];
+  trabajadores_asignados?: any[];
   created_at?: string;
-  clientes?: { nombre_cliente: string }; // Relación con tabla clientes
+  clientes?: { nombre_cliente: string }; 
 }
 
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
@@ -107,10 +112,9 @@ export const inventarioService = {
   }
 };
 
-// --- SERVICIO DE OBRAS (NUEVO) ---
+// --- SERVICIO DE OBRAS ---
 export const obrasService = {
   async listar() {
-    // Trae las obras y hace join con la tabla clientes para sacar el nombre real
     const { data, error } = await supabase.from('obras').select('*, clientes(nombre_cliente)').order('id', { ascending: false });
     if (error) throw error;
     return data as Obra[];
@@ -147,10 +151,20 @@ export const usuariosService = {
     const { data, error } = await supabase.from('usuarios').insert([usuario]).select();
     if (error) throw error;
     return data[0];
+  },
+  // MÉTODOS AÑADIDOS PARA CORREGIR EL ERROR EN PERSONALTAB
+  async actualizar(id: number, usuario: any) {
+    const { data, error } = await supabase.from('usuarios').update(usuario).eq('id', id).select();
+    if (error) throw error;
+    return data[0];
+  },
+  async eliminar(id: number) {
+    const { error } = await supabase.from('usuarios').delete().eq('id', id);
+    if (error) throw error;
+    return true;
   }
 };
 
-// --- SERVICIO DE FINANZAS ---
 // --- SERVICIO DE FINANZAS ---
 export const finanzasService = {
   async registrarCotizacion(cotizacion: CotizacionHistorial) {
@@ -169,13 +183,7 @@ export const finanzasService = {
     const { error: errEstado } = await supabase.from('cotizaciones_historial').update({ estado: nuevoEstado }).eq('id', cotizacionId);
     if (errEstado) throw errEstado;
   },
-  
-  // ==========================================
-  // NUEVAS FUNCIONES PARA BANDEJA DE GESTIÓN
-  // ==========================================
-  
   async listarCotizacionesTodas() {
-    // Trae todas las cotizaciones con el nombre del cliente para la tabla general
     const { data, error } = await supabase.from('cotizaciones_historial')
       .select('*, clientes(nombre_cliente)')
       .order('created_at', { ascending: false });
@@ -183,7 +191,6 @@ export const finanzasService = {
     return data;
   },
   async actualizarEstadoCotizacion(id: number, estado: string) {
-    // Actualiza el estado a 'Aprobado', 'Rechazado', etc.
     const { error } = await supabase.from('cotizaciones_historial').update({ estado }).eq('id', id);
     if (error) throw error;
   }
