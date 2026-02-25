@@ -44,6 +44,7 @@ export const CotizacionGenerador = ({ clientes, productos, cotizacionPrevia, onS
   const [precioEditable, setPrecioEditable] = useState<number | string>(0);
   const [monedaActual, setMonedaActual] = useState('S/'); // Estado para moneda
   const [itemEnEdicion, setItemEnEdicion] = useState<{ grupoId: number, itemId: number } | null>(null);  
+  const [monedaGlobal, setMonedaGlobal] = useState('S/'); // Controla el valor por defecto
   const jumpTo = (id: string, cursorAtEnd = false) => {
     setTimeout(() => {
       const el = document.getElementById(id) as HTMLInputElement | HTMLTextAreaElement;
@@ -140,6 +141,7 @@ export const CotizacionGenerador = ({ clientes, productos, cotizacionPrevia, onS
     setPrecioEditable(0);
     setMostrarListadoProd(false); 
     setItemEnEdicion(null);
+    setMonedaActual(monedaGlobal);
     jumpTo(`input-prod-${grupoId}`);
   };
 
@@ -313,16 +315,60 @@ export const CotizacionGenerador = ({ clientes, productos, cotizacionPrevia, onS
 
         {/* BLOQUE 2: DETALLE DE PRESUPUESTO */}
         <div className="bg-white border border-slate-200 p-6 shadow-sm">
-          <div className="flex justify-between items-center mb-4">
-            <h3 className="font-black uppercase tracking-widest text-[11px] text-[#1e293b]">2. Detalle de Presupuesto</h3>
-            <button id="btn-add-grupo" onClick={agregarGrupo} onKeyDown={(e) => {
-              if (e.key === 'ArrowUp') jumpTo('input-desc', true);
-              if (e.key === 'ArrowRight' && grupos.length > 0) { e.preventDefault(); jumpTo(`grupo-header-${grupos[0].id}`); }
-              if (e.key === 'ArrowDown') { e.preventDefault(); if (grupos.length > 0) jumpTo(`grupo-header-${grupos[0].id}`); }
-              if (e.key === 'Enter') { e.preventDefault(); agregarGrupo(); }
-            }} className="bg-[#1e293b] text-[#00B4D8] px-3 py-1.5 text-[10px] font-black uppercase flex items-center gap-2 focus:ring-2 focus:ring-blue-500 outline-none">
-              <Plus size={14}/> Grupo
-            </button>
+          <div className="flex flex-nowrap items-center justify-between gap-1 mb-4 bg-slate-50 p-1 border-b border-slate-100 overflow-hidden">
+            <h3 className="font-black uppercase tracking-widest text-[9px] text-[#1e293b] truncate shrink">2. PRESUPUESTO</h3>
+            
+            {/* SWITCH MAESTRO DE MONEDA */}
+            <div className="flex items-center bg-slate-100 p-0.5 border border-slate-300 ml-auto">
+              <button 
+  id="btn-moneda-soles"
+  onKeyDown={(e) => {
+    e.preventDefault(); // BLOQUEA entrada de cursor al texto
+    if (e.key === 'ArrowRight') jumpTo('btn-moneda-dola');
+    if (e.key === 'ArrowDown') { if (grupos.length > 0) jumpTo(`grupo-header-${grupos[0].id}`); }
+    if (e.key === 'Enter') { 
+      setMonedaGlobal('S/'); setMonedaActual('S/'); 
+      if (grupos.length > 0) jumpTo(`input-prod-${grupos[0].id}`); 
+    }
+  }}
+  onClick={() => { setMonedaGlobal('S/'); setMonedaActual('S/'); }}
+  className={`px-3 py-1 text-[9px] font-black transition-all outline-none focus:ring-2 focus:ring-[#1e293b] ${monedaGlobal === 'S/' ? 'bg-[#1e293b] text-white' : 'text-slate-400 hover:text-slate-600'}`}
+>SOLES (S/)</button>
+              <button 
+  id="btn-moneda-dola"
+  onKeyDown={(e) => {
+    e.preventDefault(); // BLOQUEA entrada de cursor al texto
+    if (e.key === 'ArrowLeft') jumpTo('btn-moneda-soles');
+    if (e.key === 'ArrowRight') jumpTo('btn-add-grupo');
+    if (e.key === 'ArrowDown') { if (grupos.length > 0) jumpTo(`grupo-header-${grupos[0].id}`); }
+    if (e.key === 'Enter') { 
+      setMonedaGlobal('$'); setMonedaActual('$'); 
+      if (grupos.length > 0) jumpTo(`input-prod-${grupos[0].id}`); 
+    }
+  }}
+  onClick={() => { setMonedaGlobal('$'); setMonedaActual('$'); }}
+  className={`px-3 py-1 text-[9px] font-black transition-all outline-none focus:ring-2 focus:ring-[#1e293b] ${monedaGlobal === '$' ? 'bg-[#1e293b] text-white' : 'text-slate-400 hover:text-slate-600'}`}
+>DÓLARES ($)</button>
+            </div>
+
+            <button 
+  id="btn-add-grupo" 
+  onClick={agregarGrupo} 
+  onKeyDown={(e) => {
+    e.preventDefault(); // Bloquea entrada al texto
+    
+    // NAVEGACIÓN
+    if (e.key === 'ArrowLeft') jumpTo('btn-moneda-dola');
+    if (e.key === 'ArrowUp') jumpTo('input-desc', true); // Sube a la descripción
+    if (e.key === 'ArrowDown') { if (grupos.length > 0) jumpTo(`grupo-header-${grupos[0].id}`); }
+    
+    // ACCIÓN
+    if (e.key === 'Enter') agregarGrupo();
+  }}
+  className="bg-[#1e293b] text-[#00B4D8] px-3 py-1.5 text-[10px] font-black uppercase flex items-center gap-2 focus:ring-2 focus:ring-blue-500 outline-none shrink-0"
+>
+  <Plus size={14}/> Grupo
+</button>
           </div>
 
           <div className="flex flex-col gap-3">
