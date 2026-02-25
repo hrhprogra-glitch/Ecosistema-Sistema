@@ -124,7 +124,7 @@ export const AdminDashboard = () => {
                   <>
                     <button onClick={() => irASeccionCliente('lista')} className={`px-4 py-2 text-[10px] font-black uppercase tracking-widest transition-all ${subTabClientes === 'lista' ? 'bg-[#00B4D8] text-white shadow-md' : 'text-slate-400 hover:text-[#00B4D8]'}`}>Inicio</button>
                     <button onClick={() => irASeccionCliente('cotizaciones')} className={`px-4 py-2 text-[10px] font-black uppercase tracking-widest transition-all ${subTabClientes === 'cotizaciones' ? 'bg-[#00B4D8] text-white shadow-md' : 'text-slate-400 hover:text-[#00B4D8]'}`}>Cotizar</button>
-                    <button onClick={() => irASeccionCliente('historial')} className={`px-4 py-2 text-[10px] font-black uppercase tracking-widest transition-all ${subTabClientes === 'historial' ? 'bg-[#00B4D8] text-white shadow-md' : 'text-slate-400 hover:text-[#00B4D8]'}`}>Expedientes</button>
+                    <button onClick={() => irASeccionCliente('historial')} className={`px-4 py-2 text-[10px] font-black uppercase tracking-widest transition-all ${subTabClientes === 'historial' ? 'bg-[#00B4D8] text-white shadow-md' : 'text-slate-400 hover:text-[#00B4D8]'}`}>Cuentas x Cobrar</button>
                   </>
                 )}
 
@@ -155,7 +155,13 @@ export const AdminDashboard = () => {
           <div className="w-full max-w-[1600px] mx-auto">
             {tab === 'dashboard' && <DashboardTab setTab={setTab} />}
             {tab === 'personal' && <PersonalTab />}
-            {tab === 'clientes' && <ClientesTab subTab={subTabClientes} zoom={100} />}
+            {tab === 'clientes' && (
+  <ClientesTab 
+    subTab={subTabClientes} 
+    zoom={100} 
+    setSubTab={setSubTabClientes} // <--- AÑADIMOS ESTA PROP
+  />
+)}
             {tab === 'almacen' && <AlmacenTab zoom={100} subTab="inventario" />}
             {tab === 'obras' && <ObrasTab />}
             {tab === 'salida_directa' && <SalidaObra zoom={100} />}

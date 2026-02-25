@@ -4,11 +4,12 @@ import { createClient } from '@supabase/supabase-js';
 export interface Cliente {
   id?: number;
   nombre_cliente: string;
-  direccion: string;
-  telefono: string;
-  ubicacion_link: string;
-  cotizaciones_historial?: { id: number }[];
-  dni_ruc?: string; // Opcional para evitar errores si no existe en BD
+  dni_ruc?: string; 
+  dni?: string; // <-- Añadido por seguridad para compatibilidad con la base de datos
+  telefono?: string;
+  direccion?: string;
+  ubicacion_link?: string;
+  email?: string;
 }
 
 export interface UsuarioSistema {
@@ -29,16 +30,16 @@ export interface CotizacionHistorial {
   estado: 'Pendiente' | 'Aprobado' | 'Rechazado' | 'Parcial' | 'Completado';
   nota?: string;
   detalles?: any[]; 
-  descripcion_trabajo?: string; // <-- AÑADIDO AQUÍ
+  descripcion_trabajo?: string; 
   created_at?: string;
-  pagos?: Pago[]; // Para soportar la lectura de abonos
+  pagos?: Pago[]; 
 }
 
 export interface Pago {
   id?: number;
   cotizacion_id: number;
   monto_pagado: number;
-  fecha_pago: string;
+  fecha_pago?: string;
   metodo: string;
   created_at?: string;
 }
@@ -167,10 +168,9 @@ export const usuariosService = {
   }
 };
 
-// --- SERVICIO DE FINANZAS (MODIFICADO) ---
+// --- SERVICIO DE FINANZAS ---
 export const finanzasService = {
   async registrarCotizacion(cotizacion: CotizacionHistorial) {
-    // Cambiado insert por upsert para permitir la edición desde el generador
     const { data, error } = await supabase.from('cotizaciones_historial').upsert([cotizacion]).select();
     if (error) throw error;
     return data[0];
@@ -180,14 +180,20 @@ export const finanzasService = {
     if (error) throw error;
     return data;
   },
-  async registrarPago(pago: Pago, cotizacionId: number, nuevoEstado: string) {
-    const { error: errPago } = await supabase.from('pagos').insert([pago]);
-    if (errPago) throw errPago;
-    const { error: errEstado } = await supabase.from('cotizaciones_historial').update({ estado: nuevoEstado }).eq('id', cotizacionId);
-    if (errEstado) throw errEstado;
+  
+  // ---> CORRECCIÓN PRINCIPAL AQUÍ <---
+  async registrarPago(cotizacionId: number, monto: number, metodo: string) {
+    // Al enviar el objeto así, evitamos el error de "Keys must match"
+    const nuevoPago = {
+      cotizacion_id: cotizacionId,
+      monto_pagado: monto,
+      metodo: metodo
+    };
+    const { error } = await supabase.from('pagos').insert(nuevoPago);
+    if (error) throw error;
   },
+
   async listarCotizacionesTodas() {
-    // Modificado para traer pagos(*) y evitar error 400 por dni_ruc inexistente
     const { data, error } = await supabase.from('cotizaciones_historial')
       .select('*, clientes(nombre_cliente), pagos(*)')
       .order('created_at', { ascending: false });
@@ -198,7 +204,6 @@ export const finanzasService = {
     const { error } = await supabase.from('cotizaciones_historial').update({ estado }).eq('id', id);
     if (error) throw error;
   },
-  // NUEVOS MÉTODOS PARA GESTIÓN DE ABONOS
   async actualizarPago(id: number, cambios: { monto_pagado: number; metodo: string }) {
     const { data, error } = await supabase.from('pagos').update(cambios).eq('id', id).select();
     if (error) throw error;
@@ -208,5 +213,14 @@ export const finanzasService = {
     const { error } = await supabase.from('pagos').delete().eq('id', id);
     if (error) throw error;
     return true;
-  }
+  },
+  async eliminarCotizacion(id: number) {
+    const { error } = await supabase
+      .from('cotizaciones_historial') 
+      .delete()
+      .eq('id', id);
+
+    if (error) throw error;
+    return true;
+  },
 };

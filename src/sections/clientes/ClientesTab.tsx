@@ -1,38 +1,49 @@
 import { useState } from 'react';
 import { ListaClientes } from './ListaClientes';
 import { CotizacionesTab } from './CotizacionesTab';
-import { HistorialGeneralView } from './HistorialClienteView'; // Componente que crearemos
+import { HistorialGeneralView } from './HistorialClienteView';
 import type { Cliente } from '../../services/supabase';
 
 interface ClientesTabProps {
-  subTab: 'lista' | 'cotizaciones' | 'historial'; // Añadimos 'historial'
-  zoom?: number; 
+  subTab: 'lista' | 'cotizaciones' | 'historial';
+  zoom?: number;
+  setSubTab?: (tab: 'lista' | 'cotizaciones' | 'historial') => void; 
 }
 
-export const ClientesTab = ({ subTab, zoom = 100 }: ClientesTabProps) => {
-  // Mantenemos la capacidad de ir a un historial específico desde la lista
-  const [clienteFiltro, setClienteFiltro] = useState<Cliente | null>(null);
+export const ClientesTab = ({ subTab, zoom = 100, setSubTab }: ClientesTabProps) => {
+  // Estado que guardará el nombre para el buscador de la bandeja
+  const [nombreParaBandeja, setNombreParaBandeja] = useState('');
 
-  const irAHistorialEspecifico = (cliente: Cliente) => {
-    setClienteFiltro(cliente);
-    // Nota: El cambio de subTab a 'historial' debe ser manejado por el componente padre (AdminDashboard)
+  // Esta función maneja el clic en el botón "Bandeja" de la lista
+  const irABandejaConFiltro = (cliente: Cliente) => {
+    setNombreParaBandeja(cliente.nombre_cliente); 
+    
+    // Cambia la pestaña a cotizaciones en el AdminDashboard
+    if (setSubTab) {
+      setSubTab('cotizaciones'); 
+    }
   };
 
   return (
-    <div className="w-full h-full animate-in fade-in duration-500">
+    /* Eliminamos paddings extras que puedan arruinar la estética del Dashboard padre */
+    <div className="w-full h-full animate-in fade-in slide-in-from-bottom-1 duration-500">
       
       {subTab === 'lista' && (
-        <ListaClientes onVerHistorial={irAHistorialEspecifico} />
+        <ListaClientes onVerHistorial={irABandejaConFiltro} />
       )}
 
       {subTab === 'cotizaciones' && (
-        <CotizacionesTab zoom={zoom} />
+        <CotizacionesTab 
+          zoom={zoom} 
+          filtroInicial={nombreParaBandeja} 
+          onFiltroChange={setNombreParaBandeja} // <--- NUEVA LÍNEA AÑADIDA
+        />
       )}
 
       {subTab === 'historial' && (
         <HistorialGeneralView 
-          clienteInicial={clienteFiltro} 
-          onLimpiarFiltro={() => setClienteFiltro(null)} 
+          clienteInicial={null} 
+          onLimpiarFiltro={() => {}} 
         />
       )}
       

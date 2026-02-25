@@ -27,7 +27,9 @@ export const CotizacionGenerador = ({ clientes, productos, cotizacionPrevia, onS
   const [clienteSelect, setClienteSelect] = useState<Cliente | null>(null);
   const [busquedaCliente, setBusquedaCliente] = useState(''); 
   const [mostrarDropdownCliente, setMostrarDropdownCliente] = useState(false);
+  const [terminoFiltro, setTerminoFiltro] = useState('');
   const [fechaCotizacion, setFechaCotizacion] = useState(new Date().toISOString().split('T')[0]);
+  const [selectedIndexCliente, setSelectedIndexCliente] = useState(-1);
   const [nota, setNota] = useState('');
   const [descripcionTrabajo, setDescripcionTrabajo] = useState('');
   const [guardando, setGuardando] = useState(false);
@@ -86,11 +88,16 @@ export const CotizacionGenerador = ({ clientes, productos, cotizacionPrevia, onS
     }
   }, [cotizacionPrevia, clientes]);
 
-  const clientesFiltrados = clientes.filter(c => c.nombre_cliente.toLowerCase().includes(busquedaCliente.toLowerCase())).slice(0, 12);
+  // Modificado para usar terminoFiltro y no busquedaCliente
+  const clientesFiltrados = clientes.filter(c => c.nombre_cliente.toLowerCase().includes(terminoFiltro.toLowerCase())).slice(0, 12);
   const productosFiltrados = prodBusqueda ? productos.filter(p => p.producto.toLowerCase().includes(prodBusqueda.toLowerCase()) || p.codigo.toLowerCase().includes(prodBusqueda.toLowerCase())).slice(0, 8) : [];
   
   const seleccionarCliente = (c: Cliente) => {
-    setClienteSelect(c); setBusquedaCliente(c.nombre_cliente); setMostrarDropdownCliente(false);
+    setClienteSelect(c); 
+    setBusquedaCliente(c.nombre_cliente); 
+    setTerminoFiltro(c.nombre_cliente);
+    setMostrarDropdownCliente(false);
+    setSelectedIndexCliente(-1); // <--- AÑADE ESTO
     jumpTo('input-fecha');
   };
 
@@ -267,39 +274,84 @@ export const CotizacionGenerador = ({ clientes, productos, cotizacionPrevia, onS
         <div className="bg-white border border-slate-200 p-6 shadow-sm space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="relative">
-              <label className="block text-[10px] font-black text-slate-400 uppercase mb-1">1. Seleccionar Cliente</label>
-              <input id="input-cliente" type="text" className={`${inputModerno} pr-10 ${clienteSelect ? 'border-[#00B4D8] bg-blue-50/30' : ''}`} placeholder="Buscar Cliente..." value={busquedaCliente}
-                onFocus={() => setMostrarDropdownCliente(true)} onBlur={() => setTimeout(() => setMostrarDropdownCliente(false), 200)}
-                onChange={(e) => { setBusquedaCliente(e.target.value); setMostrarDropdownCliente(true); }}
-                onKeyDown={(e) => {
-                  if (e.key === 'Escape') { e.preventDefault(); setMostrarDropdownCliente(false); }
-                  else if (e.key === 'Enter') {
-                    if (clientesFiltrados.length > 0 && mostrarDropdownCliente) { seleccionarCliente(clientesFiltrados[0]); }
-                    else { jumpTo('input-fecha'); }
-                  } 
-                  else if (e.key === 'ArrowRight') { checkBoundaryAndJump(e, 'end', 'input-fecha'); }
-                  // Al presionar abajo, cierra el desplegable y baja a descripción
-                  else if (e.key === 'ArrowDown') { 
-                    e.preventDefault(); 
-                    setMostrarDropdownCliente(false); 
-                    jumpTo('input-desc'); 
-                  }
-                }}
-              />
+              <label className="block text-[10px] font-black text-slate-400  mb-1">1. Seleccionar Cliente</label>
+              <input 
+  id="input-cliente" 
+  type="text" 
+  autoComplete="off"
+  className={`${inputModerno} pr-10 uppercase ${clienteSelect ? 'border-[#00B4D8] bg-blue-50/30' : ''}`} 
+  placeholder="Buscar Cliente..." 
+  value={busquedaCliente}
+  onFocus={() => setMostrarDropdownCliente(true)} 
+  onBlur={() => setTimeout(() => setMostrarDropdownCliente(false), 200)}
+  onChange={(e) => { 
+    const nuevoValor = e.target.value.toUpperCase();
+    setBusquedaCliente(nuevoValor); 
+    setTerminoFiltro(nuevoValor); 
+    setMostrarDropdownCliente(true); 
+    setSelectedIndexCliente(-1); // Resetea la selección al escribir
+  }}
+  onKeyDown={(e) => {
+    if (e.key === 'Escape') { 
+      e.preventDefault(); 
+      setMostrarDropdownCliente(false); 
+      setSelectedIndexCliente(-1);
+    }
+    else if (e.key === 'Enter') {
+      e.preventDefault();
+      // Si navegaste con las flechas, selecciona ese cliente
+      if (mostrarDropdownCliente && selectedIndexCliente >= 0 && clientesFiltrados[selectedIndexCliente]) {
+        seleccionarCliente(clientesFiltrados[selectedIndexCliente]);
+      } 
+      // Si no usaste flechas pero hay resultados, selecciona el primero
+      else if (clientesFiltrados.length > 0 && mostrarDropdownCliente) { 
+        seleccionarCliente(clientesFiltrados[0]); 
+      } 
+      // Si ya seleccionaste y presionas enter, salta a la fecha
+      else { 
+        jumpTo('input-fecha'); 
+      }
+    } 
+    else if (e.key === 'ArrowDown') { 
+      e.preventDefault(); 
+      if (!mostrarDropdownCliente) setMostrarDropdownCliente(true);
+      else setSelectedIndexCliente(prev => (prev < clientesFiltrados.length - 1 ? prev + 1 : prev));
+    }
+    else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      setSelectedIndexCliente(prev => (prev > 0 ? prev - 1 : -1));
+    }
+    else if (e.key === 'ArrowRight') { 
+      checkBoundaryAndJump(e, 'end', 'input-fecha'); 
+    }
+  }}
+/>
               <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-1">
                  {clienteSelect && <Check size={14} className="text-emerald-500" />}
                  <ChevronDown className={`text-slate-400 cursor-pointer transition-transform ${mostrarDropdownCliente ? 'rotate-180' : ''}`} size={16} onClick={() => setMostrarDropdownCliente(!mostrarDropdownCliente)} />
               </div>
               {mostrarDropdownCliente && (
-                <div className="absolute z-[110] w-full bg-white border-2 border-slate-300 shadow-2xl mt-1 max-h-[200px] overflow-y-auto">
-                  {clientesFiltrados.map(c => (
-                    <button key={c.id} className="w-full text-left px-4 py-2 hover:bg-blue-50 text-[12px] uppercase border-b" onClick={() => seleccionarCliente(c)}>{c.nombre_cliente}</button>
-                  ))}
-                </div>
-              )}
+    <div className="absolute z-[110] w-full bg-white border-2 border-slate-300 shadow-2xl mt-1 max-h-[200px] overflow-y-auto">
+      {clientesFiltrados.map((c, index) => (
+        <button 
+          key={c.id} 
+          // Si el índice coincide con el seleccionado, lo pintamos de azul
+          className={`w-full text-left px-4 py-2 text-[12px] border-b outline-none transition-colors ${
+            selectedIndexCliente === index 
+              ? 'bg-[#00B4D8] text-white font-bold' 
+              : 'hover:bg-blue-50 text-slate-700'
+          }`} 
+          onMouseEnter={() => setSelectedIndexCliente(index)} // Se selecciona también si pasas el ratón
+          onClick={() => seleccionarCliente(c)}
+        >
+          {c.nombre_cliente}
+        </button>
+      ))}
+    </div>
+  )}
             </div>
             <div>
-              <label className="block text-[10px] font-black text-slate-400 uppercase mb-1">Fecha</label>
+              <label className="block text-[10px] font-black text-slate-400  mb-1">Fecha</label>
               <input id="input-fecha" type="date" className={inputModerno} value={fechaCotizacion} onChange={(e) => setFechaCotizacion(e.target.value)} 
                 onKeyDown={(e) => {
                     if (e.key === 'ArrowLeft') { e.preventDefault(); jumpTo('input-cliente', true); }
@@ -319,7 +371,7 @@ export const CotizacionGenerador = ({ clientes, productos, cotizacionPrevia, onS
         {/* BLOQUE 2: DETALLE DE PRESUPUESTO */}
         <div className="bg-white border border-slate-200 p-6 shadow-sm">
           <div className="flex flex-nowrap items-center justify-between gap-1 mb-4 bg-slate-50 p-1 border-b border-slate-100 overflow-hidden">
-            <h3 className="font-black uppercase tracking-widest text-[9px] text-[#1e293b] truncate shrink">2. PRESUPUESTO</h3>
+            <h3 className="font-black  tracking-widest text-[9px] text-[#1e293b] truncate shrink">2. PRESUPUESTO</h3>
             
             {/* SWITCH MAESTRO DE MONEDA */}
             <div className="flex items-center bg-slate-100 p-0.5 border border-slate-300 ml-auto">
@@ -370,7 +422,7 @@ export const CotizacionGenerador = ({ clientes, productos, cotizacionPrevia, onS
     // ACCIÓN
     if (e.key === 'Enter') agregarGrupo();
   }}
-  className="bg-[#1e293b] text-[#00B4D8] px-3 py-1.5 text-[10px] font-black uppercase flex items-center gap-2 focus:ring-2 focus:ring-blue-500 outline-none shrink-0"
+  className="bg-[#1e293b] text-[#00B4D8] px-3 py-1.5 text-[10px] font-black  flex items-center gap-2 focus:ring-2 focus:ring-blue-500 outline-none shrink-0"
 >
   <Plus size={14}/> Grupo
 </button>
@@ -466,26 +518,27 @@ export const CotizacionGenerador = ({ clientes, productos, cotizacionPrevia, onS
                               } 
                               // Caso B: Si escribiste algo que NO está en la lista (Producto Manual)
                               else if (prodBusqueda.trim() !== '') {
-                                const productoManual = { 
-                                  id: Date.now(), 
-                                  codigo: 'MANUAL', 
-                                  producto: prodBusqueda.toUpperCase(), 
-                                  unidad_medida: 'UND', 
-                                  precio: 0 
-                                };
-                                setProdSelect(productoManual); 
-                                setPrecioEditable(0); 
-                                setCantidad(1); 
-                                setMostrarListadoProd(false); 
-                                jumpTo(`input-cant-${grupo.id}`);
-                              }
+  const productoManual = { 
+    id: Date.now(), 
+    codigo: 'MANUAL', 
+    // Se eliminó .toUpperCase() para respetar el texto original (mayúsculas/minúsculas)
+    producto: prodBusqueda.trim(), 
+    unidad_medida: 'UND', 
+    precio: 0 
+  };
+  setProdSelect(productoManual); 
+  setPrecioEditable(0); 
+  setCantidad(1); 
+  setMostrarListadoProd(false); 
+  jumpTo(`input-cant-${grupo.id}`);
+}
                             }
                           }}
                         />
                         {/* AVISO DE PRODUCTO NUEVO */}
 {mostrarListadoProd && prodBusqueda.trim() !== '' && productosFiltrados.length === 0 && !prodSelect && (
   <div className="absolute z-[110] w-full bg-amber-50 border border-amber-200 p-2 shadow-lg mt-1">
-    <p className="text-[10px] text-amber-700 font-black flex items-center gap-2 uppercase tracking-tighter">
+    <p className="text-[10px] text-amber-700 font-black flex items-center gap-2  tracking-tighter">
       ⚠️ Producto no encontrado. Presiona ENTER para agregarlo manualmente
     </p>
   </div>
@@ -512,7 +565,7 @@ export const CotizacionGenerador = ({ clientes, productos, cotizacionPrevia, onS
                       {prodSelect && grupoActivoId === grupo.id && (
                         <div className="flex gap-2 p-2 bg-blue-50 border border-blue-100 animate-in zoom-in-95">
                           <div className="w-32">
-  <label className="text-[9px] font-bold text-slate-400 uppercase block mb-1">Cant. / Unidad</label>
+  <label className="text-[9px] font-bold text-slate-400  block mb-1">Cant. / Unidad</label>
   <div className="flex gap-0.5">
     <input 
       id={`input-cant-${grupo.id}`} 
@@ -544,7 +597,7 @@ export const CotizacionGenerador = ({ clientes, productos, cotizacionPrevia, onS
   </div>
 </div>
                           <div className="flex-1">
-                            <label className="text-[9px] font-bold text-slate-400 uppercase block mb-1">Precio Unit.</label>
+                            <label className="text-[9px] font-bold text-slate-400  block mb-1">Precio Unit.</label>
                             <div className="flex gap-1">
                               <select 
                                 id={`select-moneda-${grupo.id}`}
@@ -574,7 +627,7 @@ export const CotizacionGenerador = ({ clientes, productos, cotizacionPrevia, onS
                              if (e.key === 'Enter') { e.preventDefault(); agregarItem(grupo.id); }
                              if (e.key === 'ArrowUp') { e.preventDefault(); jumpTo(`input-precio-${grupo.id}`); }
                              if (e.key === 'ArrowDown') { e.preventDefault(); jumpTo('input-notas'); }
-                          }} className="mt-[18px] bg-[#00B4D8] text-white px-4 font-black uppercase text-[10px] outline-none focus:ring-2 focus:ring-[#1e293b]">OK</button>
+                          }} className="mt-[18px] bg-[#00B4D8] text-white px-4 font-black  text-[10px] outline-none focus:ring-2 focus:ring-[#1e293b]">OK</button>
                         </div>
                       )}
                       
@@ -632,7 +685,7 @@ export const CotizacionGenerador = ({ clientes, productos, cotizacionPrevia, onS
 
         {/* BLOQUE 3: OBSERVACIONES Y REGISTRO */}
         <div className="bg-white border border-slate-200 p-6 shadow-sm">
-            <label className="block text-[10px] font-black text-slate-400 uppercase mb-1">Observaciones / Notas Finales</label>
+            <label className="block text-[10px] font-black text-slate-400  mb-1">Observaciones / Notas Finales</label>
             <textarea 
   id="input-notas" 
   className={`${inputModerno} min-h-[60px]`} 
@@ -677,7 +730,7 @@ export const CotizacionGenerador = ({ clientes, productos, cotizacionPrevia, onS
            <div className="text-4xl font-black text-white tracking-tighter mb-4">S/ {granTotal.toFixed(2)}</div>
            <button id="btn-registrar" onClick={procesarCotizacion} disabled={guardando} 
              onKeyDown={(e) => { if (e.key === 'ArrowUp') jumpTo('input-notas', true); }}
-             className="w-full py-4 bg-[#00B4D8] text-[#1e293b] font-black uppercase text-[12px] flex items-center justify-center gap-3 hover:bg-white transition-all outline-none focus:ring-4 focus:ring-[#00B4D8]">
+             className="w-full py-4 bg-[#00B4D8] text-[#1e293b] font-black  text-[12px] flex items-center justify-center gap-3 hover:bg-white transition-all outline-none focus:ring-4 focus:ring-[#00B4D8]">
              {guardando ? <Loader2 className="animate-spin"/> : <Save size={18} />} {cotizacionPrevia ? 'CONFIRMAR CAMBIOS' : 'REGISTRAR'}
            </button>
         </div>
@@ -689,33 +742,50 @@ export const CotizacionGenerador = ({ clientes, productos, cotizacionPrevia, onS
             <div key={pageIndex} className="hoja-imprimible bg-white text-black w-[595px] h-[842px] shrink-0 shadow-2xl p-8 relative flex flex-col font-sans border-t-[10px] border-[#1e293b]">
                 <div className="text-center mb-4 border-b border-[#1e293b] pb-4">
                     <h1 className="text-xl font-black text-[#1e293b]">ECO SISTEMAS URH SAC</h1>
-                    <p className="text-[9px] font-bold text-slate-600 uppercase">Mz A LT 9 A.V NUEVA GALES CIENEGUILLA</p>
+                    <p className="text-[9px] font-bold text-slate-600 ">Mz A LT 9 A.V NUEVA GALES CIENEGUILLA</p>
                     <p className="text-[9px] font-bold text-slate-600">998270102 – 985832096</p>
                     <p className="text-[9px] font-bold text-[#1e293b]">E-mail: ecosistemas_urh_sac@hotmail.com</p>
                 </div>
-                {pageIndex === 0 && (
-                    <>
-                    <div className="text-right mb-4 font-bold text-[10px] border-b border-[#00B4D8] inline-block self-end pb-1">{obtenerFechaTexto() ?? ''}</div>
-                    <div className="mb-4 text-left">
-                        <p className="text-[8px] font-black text-slate-400 uppercase tracking-tighter">CLIENTE:</p>
-                        <p className="font-bold text-[13px] text-[#1e293b] leading-tight mb-1">{clienteSelect?.nombre_cliente || 'NOMBRE DEL CLIENTE'}</p>
-                        <p className="text-[10px] text-slate-600 font-medium italic">A su gentil solicitud detallamos lo siguiente:</p>
-                    </div>
-                    {descripcionTrabajo && (
-                      <div className="mb-4 p-3 bg-slate-50 border-l-2 border-slate-300 text-left">
-                        <p className="text-[8px] font-black text-slate-400 uppercase mb-1">DESCRIPCIÓN DEL TRABAJO:</p>
-                        <p className="text-[10px] text-slate-700 whitespace-pre-wrap leading-tight">{descripcionTrabajo}</p>
-                      </div>
-                    )}
-                    </>
-                )}
+                {/* VISTA PREVIA HOJA A4 - SECCIÓN CLIENTE */}
+{pageIndex === 0 && (
+    <>
+    <div className="text-right mb-4 font-bold text-[10px] border-b border-[#00B4D8] inline-block self-end pb-1">
+        {obtenerFechaTexto() ?? ''}
+    </div>
+    <div className="mb-4 text-left">
+        <p className="text-[8px] font-black text-slate-400 tracking-tighter">CLIENTE:</p>
+        
+        <p className="font-bold text-[13px] text-[#1e293b] leading-tight mb-2 uppercase">
+            {busquedaCliente || 'NOMBRE DEL CLIENTE'}
+        </p>
+        
+        <p className="text-[10px] text-slate-600 font-medium italic">
+            A su gentil solicitud detallamos lo siguiente:
+        </p>
+
+        {/* === DESCRIPCIÓN DEBAJO DE LA SOLICITUD === */}
+        {descripcionTrabajo && (
+            <div className="mt-3 p-2.5 bg-slate-50 border-l-2 border-[#00B4D8]">
+                <p className="text-[8px] font-black text-[#00B4D8] uppercase tracking-widest mb-1">
+                    DESCRIPCIÓN:
+                </p>
+                <p className="text-[10px] text-slate-700 font-bold uppercase whitespace-pre-wrap leading-relaxed">
+                    {descripcionTrabajo}
+                </p>
+            </div>
+        )}
+        {/* ========================================= */}
+    </div>
+    {/* ... resto del código (Descripción del trabajo, etc.) */}
+    </>
+)}
                 <div className="flex-1 overflow-hidden">
                     <table className="w-full text-left text-[10px] border-collapse">
                         <thead>
                             <tr className="border-b-2 border-[#1e293b] bg-slate-50">
-                                <th className="py-1.5 px-1 font-black w-10 text-center uppercase">Cant.</th>
-                                <th className="py-1.5 font-black uppercase">Descripción</th>
-                                <th className="py-1.5 px-1 text-right font-black w-24 uppercase">Total</th>
+                                <th className="py-1.5 px-1 font-black w-10 text-center ">Cant.</th>
+                                <th className="py-1.5 font-black ">Descripción</th>
+                                <th className="py-1.5 px-1 text-right font-black w-24 ">Total</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -724,7 +794,7 @@ export const CotizacionGenerador = ({ clientes, productos, cotizacionPrevia, onS
                                 <tr key={i}><td colSpan={3} className="py-1.5 px-1 font-bold bg-[#f8fafc] text-[9px] tracking-wider border-b border-slate-100">{fila.texto}</td></tr> :
                                 <tr key={i} className="border-b border-slate-50">
                                     <td className="py-1.5 px-1 text-center font-bold text-slate-600">{fila.data.cantidad}</td>
-                                    <td className="py-1.5 text-slate-800 leading-tight uppercase">{fila.data.producto}</td>
+                                    <td className="py-1.5 text-slate-800 leading-tight ">{fila.data.producto}</td>
                                     <td className="py-1.5 px-1 text-right font-bold font-mono">{fila.data.moneda} {fila.data.total.toFixed(2)}</td>
                                 </tr>
                             ))}
@@ -734,18 +804,18 @@ export const CotizacionGenerador = ({ clientes, productos, cotizacionPrevia, onS
                 {pageIndex === paginas.length - 1 && (
                     <div className="mt-2 border-t-2 border-[#1e293b] pt-2">
                         <div className="flex justify-end items-center gap-4 mb-4">
-                            <span className="text-[9px] font-black text-[#00B4D8] uppercase">Total General</span>
+                            <span className="text-[9px] font-black text-[#00B4D8] ">Total General</span>
                             <span className="text-xl font-black text-[#1e293b]">S/ {granTotal.toFixed(2)}</span>
                         </div>
                         {nota && (
                           <div className="mt-4 p-3 bg-slate-50 border border-slate-200 text-left">
-                            <p className="text-[8px] font-black text-slate-400 uppercase mb-1">NOTAS / CONDICIONES:</p>
+                            <p className="text-[8px] font-black text-slate-400  mb-1">NOTAS / CONDICIONES:</p>
                             <p className="text-[9px] text-slate-600 leading-relaxed whitespace-pre-wrap">{nota}</p>
                           </div>
                         )}
                     </div>
                 )}
-                <div className="absolute bottom-4 right-8 text-[8px] text-slate-400 font-bold uppercase">Página {pageIndex + 1} de {paginas.length}</div>
+                <div className="absolute bottom-4 right-8 text-[8px] text-slate-400 font-bold ">Página {pageIndex + 1} de {paginas.length}</div>
             </div>
           ))}
       </div>

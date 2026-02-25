@@ -1,6 +1,6 @@
 // src/sections/obras/ObrasTab.tsx
 import { useState, useEffect } from 'react';
-import { Search, Plus, Building2, Edit2, Trash2, Loader2, PackagePlus } from 'lucide-react';
+import { Search,  Building2, Edit2, Trash2, Loader2 } from 'lucide-react';
 import { clientesService, inventarioService, obrasService, usuariosService } from '../../services/supabase'; 
 import type { Obra, UsuarioSistema } from '../../services/supabase';
 import { ObrasModal, IngresarMaterialModal, SupervisarEquipoModal, AbonarObraModal } from './ObrasModals';
