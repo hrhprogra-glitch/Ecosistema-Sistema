@@ -29,6 +29,7 @@ export interface CotizacionHistorial {
   estado: 'Pendiente' | 'Aprobado' | 'Rechazado' | 'Parcial' | 'Completado';
   nota?: string;
   detalles?: any[]; 
+  descripcion_trabajo?: string; // <-- AÑADIDO AQUÍ
   created_at?: string;
   pagos?: Pago[]; // Para soportar la lectura de abonos
 }
