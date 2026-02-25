@@ -115,7 +115,6 @@ export const CotizacionGenerador = ({ clientes, productos, cotizacionPrevia, onS
     setGrupos(grupos.map(g => {
       if (g.id === grupoId) {
         if (itemEnEdicion && itemEnEdicion.grupoId === grupoId) {
-          // MODO EDICIÓN: Actualizar el item existente
           return {
             ...g,
             items: g.items.map(i => i.id === itemEnEdicion.itemId ? 
@@ -123,7 +122,6 @@ export const CotizacionGenerador = ({ clientes, productos, cotizacionPrevia, onS
               : i)
           };
         } else {
-          // MODO CREACIÓN: Agregar nuevo item
           const nuevo: QuoteItem = { 
             id: Date.now(), codigo: prodSelect.codigo, producto: prodSelect.producto, 
             unidad: prodSelect.unidad_medida, cantidad: cantNum, precioUnit: precNum, 
@@ -134,21 +132,28 @@ export const CotizacionGenerador = ({ clientes, productos, cotizacionPrevia, onS
       }
       return g;
     })); 
-    
-    setProdSelect(null); setProdBusqueda(''); setCantidad(1); setPrecioEditable(0);
-    setMostrarListadoProd(false);
-    setItemEnEdicion(null); // Limpiar estado de edición
+
+    // LIMPIEZA (Ahora sí dentro de la función)
+    setProdSelect(null); 
+    setProdBusqueda(''); 
+    setCantidad(1); 
+    setPrecioEditable(0);
+    setMostrarListadoProd(false); 
+    setItemEnEdicion(null);
     jumpTo(`input-prod-${grupoId}`);
   };
 
   // --- NUEVA FUNCIÓN PARA EDITAR ---
   const iniciarEdicion = (grupoId: number, item: QuoteItem) => {
-    // 1. Encontramos el producto original en el inventario para poder seleccionarlo
+    // Busca en inventario, si no existe (es manual), crea el objeto temporalmente
     const productoBase = productos.find(p => p.codigo === item.codigo) || { 
-      id: 0, codigo: item.codigo, producto: item.producto, unidad_medida: item.unidad, precio: item.precioUnit 
+      id: 0, 
+      codigo: item.codigo, 
+      producto: item.producto, 
+      unidad_medida: item.unidad, 
+      precio: item.precioUnit 
     };
     
-    // 2. Cargamos todos los datos en los inputs
     setGrupoExpandidoId(grupoId);
     setGrupoActivoId(grupoId);
     setProdSelect(productoBase);
@@ -158,7 +163,7 @@ export const CotizacionGenerador = ({ clientes, productos, cotizacionPrevia, onS
     setMonedaActual(item.moneda);
     setItemEnEdicion({ grupoId, itemId: item.id });
     
-    // 3. Hacemos foco en cantidad
+    // Foco directo a cantidad
     jumpTo(`input-cant-${grupoId}`);
   };
 
@@ -352,6 +357,7 @@ export const CotizacionGenerador = ({ clientes, productos, cotizacionPrevia, onS
                       />
                       <div className="relative">
                         <input id={`input-prod-${grupo.id}`} placeholder="Buscar Material..." className={inputModerno} value={grupoActivoId === grupo.id ? prodBusqueda : ''} 
+                        
                           onChange={e => { 
                             setGrupoActivoId(grupo.id); 
                             setProdBusqueda(e.target.value); 
@@ -369,28 +375,70 @@ export const CotizacionGenerador = ({ clientes, productos, cotizacionPrevia, onS
   }, 200);
 }}
                           onKeyDown={(e) => {
-                            if (e.key === 'Escape') { e.preventDefault(); setMostrarListadoProd(false); }
-                            else if (e.key === 'ArrowUp') { e.preventDefault(); setMostrarListadoProd(false); jumpTo(`input-grupo-nombre-${grupo.id}`, true); }
+                            if (e.key === 'Escape') { 
+                              e.preventDefault(); 
+                              setMostrarListadoProd(false); 
+                            }
+                            else if (e.key === 'ArrowUp') { 
+                              e.preventDefault(); 
+                              setMostrarListadoProd(false); 
+                              jumpTo(`input-grupo-nombre-${grupo.id}`, true); 
+                            }
                             else if (e.key === 'ArrowDown') { 
-  e.preventDefault(); 
-  if (prodSelect) { jumpTo(`input-cant-${grupo.id}`); } 
-  else if (productosFiltrados.length > 0 && mostrarListadoProd) { jumpTo(`prod-res-${grupo.id}-0`); } 
-  else if (grupo.items.length > 0) { jumpTo(`item-row-${grupo.id}-0`); } // <--- Agrega esta línea
-  else { jumpTo('input-notas'); } 
-}
+                              e.preventDefault(); 
+                              if (prodSelect) { 
+                                jumpTo(`input-cant-${grupo.id}`); 
+                              } else if (productosFiltrados.length > 0 && mostrarListadoProd) { 
+                                jumpTo(`prod-res-${grupo.id}-0`); 
+                              } else if (grupo.items.length > 0) { 
+                                jumpTo(`item-row-${grupo.id}-0`); 
+                              } else { 
+                                jumpTo('input-notas'); 
+                              } 
+                            }
                             else if (e.key === 'ArrowRight') {
                               if (!prodSelect && productosFiltrados.length > 0 && mostrarListadoProd) {
                                 e.preventDefault(); jumpTo(`prod-res-${grupo.id}-0`); 
                               }
                             }
                             else if (e.key === 'Enter') {
+                              e.preventDefault();
+                              // Caso A: Si hay algo en la lista desplegable y no hemos seleccionado nada aún
                               if (productosFiltrados.length > 0 && mostrarListadoProd && !prodSelect) {
-                                e.preventDefault();
-                                const p = productosFiltrados[0]; setProdSelect(p); setProdBusqueda(p.producto); setPrecioEditable(p.precio); setCantidad(1); setMostrarListadoProd(false); jumpTo(`input-cant-${grupo.id}`);
+                                const p = productosFiltrados[0]; 
+                                setProdSelect(p); 
+                                setProdBusqueda(p.producto); 
+                                setPrecioEditable(p.precio); 
+                                setCantidad(1); 
+                                setMostrarListadoProd(false); 
+                                jumpTo(`input-cant-${grupo.id}`);
+                              } 
+                              // Caso B: Si escribiste algo que NO está en la lista (Producto Manual)
+                              else if (prodBusqueda.trim() !== '') {
+                                const productoManual = { 
+                                  id: Date.now(), 
+                                  codigo: 'MANUAL', 
+                                  producto: prodBusqueda.toUpperCase(), 
+                                  unidad_medida: 'UND', 
+                                  precio: 0 
+                                };
+                                setProdSelect(productoManual); 
+                                setPrecioEditable(0); 
+                                setCantidad(1); 
+                                setMostrarListadoProd(false); 
+                                jumpTo(`input-cant-${grupo.id}`);
                               }
                             }
                           }}
                         />
+                        {/* AVISO DE PRODUCTO NUEVO */}
+{mostrarListadoProd && prodBusqueda.trim() !== '' && productosFiltrados.length === 0 && !prodSelect && (
+  <div className="absolute z-[110] w-full bg-amber-50 border border-amber-200 p-2 shadow-lg mt-1">
+    <p className="text-[10px] text-amber-700 font-black flex items-center gap-2 uppercase tracking-tighter">
+      ⚠️ Producto no encontrado. Presiona ENTER para agregarlo manualmente
+    </p>
+  </div>
+)}
                         {mostrarListadoProd && grupoActivoId === grupo.id && prodBusqueda && !prodSelect && (
                           <div className="absolute z-[100] w-full bg-white border border-slate-300 shadow-xl max-h-40 overflow-y-auto">
                             {productosFiltrados.map((p, pIdx) => (
