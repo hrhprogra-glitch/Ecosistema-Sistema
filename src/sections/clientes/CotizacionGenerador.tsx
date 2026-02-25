@@ -43,7 +43,7 @@ export const CotizacionGenerador = ({ clientes, productos, cotizacionPrevia, onS
   const [cantidad, setCantidad] = useState<number | string>(1);
   const [precioEditable, setPrecioEditable] = useState<number | string>(0);
   const [monedaActual, setMonedaActual] = useState('S/'); // Estado para moneda
-
+  const [itemEnEdicion, setItemEnEdicion] = useState<{ grupoId: number, itemId: number } | null>(null);  
   const jumpTo = (id: string, cursorAtEnd = false) => {
     setTimeout(() => {
       const el = document.getElementById(id) as HTMLInputElement | HTMLTextAreaElement;
@@ -112,20 +112,54 @@ export const CotizacionGenerador = ({ clientes, productos, cotizacionPrevia, onS
     const cantNum = Number(cantidad) || 0;
     const precNum = Number(precioEditable) || 0;
     
-    const nuevo: QuoteItem = { 
-      id: Date.now(), 
-      codigo: prodSelect.codigo, 
-      producto: prodSelect.producto, 
-      unidad: prodSelect.unidad_medida, 
-      cantidad: cantNum, 
-      precioUnit: precNum, 
-      total: precNum * cantNum,
-      moneda: monedaActual
-    };
-    setGrupos(grupos.map(g => g.id === grupoId ? { ...g, items: [...g.items, nuevo] } : g)); 
+    setGrupos(grupos.map(g => {
+      if (g.id === grupoId) {
+        if (itemEnEdicion && itemEnEdicion.grupoId === grupoId) {
+          // MODO EDICIÓN: Actualizar el item existente
+          return {
+            ...g,
+            items: g.items.map(i => i.id === itemEnEdicion.itemId ? 
+              { ...i, codigo: prodSelect.codigo, producto: prodSelect.producto, unidad: prodSelect.unidad_medida, cantidad: cantNum, precioUnit: precNum, total: precNum * cantNum, moneda: monedaActual } 
+              : i)
+          };
+        } else {
+          // MODO CREACIÓN: Agregar nuevo item
+          const nuevo: QuoteItem = { 
+            id: Date.now(), codigo: prodSelect.codigo, producto: prodSelect.producto, 
+            unidad: prodSelect.unidad_medida, cantidad: cantNum, precioUnit: precNum, 
+            total: precNum * cantNum, moneda: monedaActual
+          };
+          return { ...g, items: [...g.items, nuevo] };
+        }
+      }
+      return g;
+    })); 
+    
     setProdSelect(null); setProdBusqueda(''); setCantidad(1); setPrecioEditable(0);
     setMostrarListadoProd(false);
+    setItemEnEdicion(null); // Limpiar estado de edición
     jumpTo(`input-prod-${grupoId}`);
+  };
+
+  // --- NUEVA FUNCIÓN PARA EDITAR ---
+  const iniciarEdicion = (grupoId: number, item: QuoteItem) => {
+    // 1. Encontramos el producto original en el inventario para poder seleccionarlo
+    const productoBase = productos.find(p => p.codigo === item.codigo) || { 
+      id: 0, codigo: item.codigo, producto: item.producto, unidad_medida: item.unidad, precio: item.precioUnit 
+    };
+    
+    // 2. Cargamos todos los datos en los inputs
+    setGrupoExpandidoId(grupoId);
+    setGrupoActivoId(grupoId);
+    setProdSelect(productoBase);
+    setProdBusqueda(item.producto);
+    setCantidad(item.cantidad);
+    setPrecioEditable(item.precioUnit);
+    setMonedaActual(item.moneda);
+    setItemEnEdicion({ grupoId, itemId: item.id });
+    
+    // 3. Hacemos foco en cantidad
+    jumpTo(`input-cant-${grupoId}`);
   };
 
   const eliminarItem = (grupoId: number, itemId: number) => {
@@ -338,11 +372,12 @@ export const CotizacionGenerador = ({ clientes, productos, cotizacionPrevia, onS
                             if (e.key === 'Escape') { e.preventDefault(); setMostrarListadoProd(false); }
                             else if (e.key === 'ArrowUp') { e.preventDefault(); setMostrarListadoProd(false); jumpTo(`input-grupo-nombre-${grupo.id}`, true); }
                             else if (e.key === 'ArrowDown') { 
-                              e.preventDefault(); 
-                              if (prodSelect) { jumpTo(`input-cant-${grupo.id}`); } // Si ya está seleccionado, baja a la cantidad
-                              else if (productosFiltrados.length > 0 && mostrarListadoProd) { jumpTo(`prod-res-${grupo.id}-0`); } // Entra a la lista
-                              else { jumpTo('input-notas'); } 
-                            }
+  e.preventDefault(); 
+  if (prodSelect) { jumpTo(`input-cant-${grupo.id}`); } 
+  else if (productosFiltrados.length > 0 && mostrarListadoProd) { jumpTo(`prod-res-${grupo.id}-0`); } 
+  else if (grupo.items.length > 0) { jumpTo(`item-row-${grupo.id}-0`); } // <--- Agrega esta línea
+  else { jumpTo('input-notas'); } 
+}
                             else if (e.key === 'ArrowRight') {
                               if (!prodSelect && productosFiltrados.length > 0 && mostrarListadoProd) {
                                 e.preventDefault(); jumpTo(`prod-res-${grupo.id}-0`); 
@@ -380,10 +415,14 @@ export const CotizacionGenerador = ({ clientes, productos, cotizacionPrevia, onS
                           <div className="w-20">
                             <label className="text-[9px] font-bold text-slate-400 uppercase block mb-1">Cant.</label>
                             <input id={`input-cant-${grupo.id}`} type="number" className={`${inputModerno} text-center`} value={cantidad} 
-                              onChange={e => setCantidad(e.target.value)} onFocus={(e) => { setCantidad(''); e.target.select(); }}
+                              onChange={e => setCantidad(e.target.value)} onFocus={(e) => e.target.select()}
                               onKeyDown={(e) => {
                                 if (e.key === 'Enter' || e.key === 'ArrowRight') { e.preventDefault(); jumpTo(`select-moneda-${grupo.id}`); }
-                                if (e.key === 'ArrowDown') { e.preventDefault(); jumpTo('input-notas'); }
+                                if (e.key === 'ArrowDown') { 
+  e.preventDefault(); 
+  if (grupo.items.length > 0) jumpTo(`item-row-${grupo.id}-0`); // <--- Salta a la lista
+  else jumpTo('input-notas'); 
+}
                                 if (e.key === 'ArrowUp') { e.preventDefault(); jumpTo(`input-prod-${grupo.id}`, true); }
                               }} 
                             />
@@ -405,7 +444,7 @@ export const CotizacionGenerador = ({ clientes, productos, cotizacionPrevia, onS
                                 <option value="$">$</option>
                               </select>
                               <input id={`input-precio-${grupo.id}`} type="number" className={`${inputModerno} text-right font-black text-[#00B4D8]`} value={precioEditable} 
-                                onChange={e => setPrecioEditable(e.target.value)} onFocus={(e) => { setPrecioEditable(''); e.target.select(); }}
+                                onChange={e => setPrecioEditable(e.target.value)} onFocus={(e) => e.target.select()}
                                 onKeyDown={(e) => {
                                   if (e.key === 'ArrowLeft') { e.preventDefault(); jumpTo(`select-moneda-${grupo.id}`); }
                                   if (e.key === 'Enter' || e.key === 'ArrowRight' || e.key === 'ArrowDown') { e.preventDefault(); jumpTo(`btn-ok-${grupo.id}`); }
@@ -424,16 +463,49 @@ export const CotizacionGenerador = ({ clientes, productos, cotizacionPrevia, onS
                       )}
                       
                       <div className="space-y-1 mt-2">
-                        {grupo.items.map(item => (
-                          <div key={item.id} className="flex justify-between p-2 bg-slate-50 text-[11px] border-b border-white">
-                            <span>{item.cantidad} x {item.producto}</span>
-                            <div className="flex items-center gap-3">
-                              <span className="font-black font-mono">{item.moneda} {item.total.toFixed(2)}</span>
-                              <button onClick={() => eliminarItem(grupo.id, item.id)} className="text-red-300 hover:text-red-500 outline-none focus:ring-2 focus:ring-red-300 rounded"><Trash2 size={14}/></button>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
+  {grupo.items.map((item, iIdx) => (
+    <div 
+      key={item.id} 
+      id={`item-row-${grupo.id}-${iIdx}`}
+      tabIndex={0}
+      className="flex justify-between p-2 bg-slate-50 text-[11px] border-b border-white outline-none focus:ring-2 focus:ring-inset focus:ring-[#00B4D8] cursor-pointer hover:bg-slate-100"
+      onClick={() => iniciarEdicion(grupo.id, item)}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter') { e.preventDefault(); iniciarEdicion(grupo.id, item); }
+        else if (e.key === 'ArrowUp') { 
+          e.preventDefault(); 
+          if (iIdx === 0) jumpTo(`input-prod-${grupo.id}`, true);
+          else jumpTo(`item-row-${grupo.id}-${iIdx - 1}`);
+        }
+        else if (e.key === 'ArrowDown') {
+          e.preventDefault();
+          if (iIdx < grupo.items.length - 1) jumpTo(`item-row-${grupo.id}-${iIdx + 1}`);
+          else jumpTo('input-notas'); 
+        }
+        else if (e.key === 'ArrowRight') {
+          e.preventDefault();
+          jumpTo(`btn-del-item-${item.id}`); // Salta al tacho
+        }
+      }}
+    >
+      <span>{item.cantidad} x {item.producto}</span>
+      <div className="flex items-center gap-3">
+        <span className="font-black font-mono">{item.moneda} {item.total.toFixed(2)}</span>
+        <button 
+          id={`btn-del-item-${item.id}`}
+          onClick={(e) => { e.stopPropagation(); eliminarItem(grupo.id, item.id); }} 
+          onKeyDown={(e) => {
+            if (e.key === 'ArrowLeft') { e.preventDefault(); jumpTo(`item-row-${grupo.id}-${iIdx}`); }
+            if (e.key === 'Enter') { e.stopPropagation(); eliminarItem(grupo.id, item.id); }
+          }}
+          className="text-red-300 hover:text-red-500 outline-none focus:ring-2 focus:ring-red-300 rounded p-1"
+        >
+          <Trash2 size={14}/>
+        </button>
+      </div>
+    </div>
+  ))}
+</div>
                     </div>
                   )}
                 </div>
@@ -460,8 +532,7 @@ export const CotizacionGenerador = ({ clientes, productos, cotizacionPrevia, onS
                 else if (e.key === 'ArrowDown') {
                   if (e.currentTarget.selectionEnd === e.currentTarget.value.length) {
                     e.preventDefault();
-                    // Usamos focus nativo sin delay
-                    document.getElementById('btn-registrar')?.focus();
+                    jumpTo('btn-registrar');
                   }
                 } 
                 // Si presiona Enter, guarda automáticamente
