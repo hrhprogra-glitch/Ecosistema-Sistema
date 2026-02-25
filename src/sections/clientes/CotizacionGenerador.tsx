@@ -330,6 +330,7 @@ export const CotizacionGenerador = ({ clientes, productos, cotizacionPrevia, onS
       setMonedaGlobal('S/'); setMonedaActual('S/'); 
       if (grupos.length > 0) jumpTo(`input-prod-${grupos[0].id}`); 
     }
+    if (e.key === 'ArrowUp') { e.preventDefault(); jumpTo('input-desc', true); }
   }}
   onClick={() => { setMonedaGlobal('S/'); setMonedaActual('S/'); }}
   className={`px-3 py-1 text-[9px] font-black transition-all outline-none focus:ring-2 focus:ring-[#1e293b] ${monedaGlobal === 'S/' ? 'bg-[#1e293b] text-white' : 'text-slate-400 hover:text-slate-600'}`}
@@ -345,6 +346,7 @@ export const CotizacionGenerador = ({ clientes, productos, cotizacionPrevia, onS
       setMonedaGlobal('$'); setMonedaActual('$'); 
       if (grupos.length > 0) jumpTo(`input-prod-${grupos[0].id}`); 
     }
+    if (e.key === 'ArrowUp') { e.preventDefault(); jumpTo('input-desc', true); }
   }}
   onClick={() => { setMonedaGlobal('$'); setMonedaActual('$'); }}
   className={`px-3 py-1 text-[9px] font-black transition-all outline-none focus:ring-2 focus:ring-[#1e293b] ${monedaGlobal === '$' ? 'bg-[#1e293b] text-white' : 'text-slate-400 hover:text-slate-600'}`}
