@@ -1,5 +1,5 @@
 // src/sections/obras/ObrasModals.tsx
-import { X, Shield, Save, PackagePlus, DollarSign, Loader2, Users, MapPin, Calendar } from 'lucide-react';
+import { X, Shield, Save, PackagePlus, DollarSign, Loader2, MapPin, Calendar, FileText, ExternalLink } from 'lucide-react';
 
 const labelStyle = "block text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-2";
 const inputStyle = "w-full bg-white border border-slate-200 p-3 text-[13px] font-bold uppercase rounded-none outline-none focus:border-[#00B4D8] transition-all shadow-sm";
@@ -156,38 +156,116 @@ export const AbonarObraModal = ({ obraSeleccionada, onClose, onConfirm, procesan
   );
 };
 
-// FIX: Added 'export' to SupervisarEquipoModal
-export const SupervisarEquipoModal = ({ obraSeleccionada, usuarios, onClose }: any) => {
+// Reemplaza SOLO este componente en ObrasModals.tsx
+
+export const VerMaterialesProyectoModal = ({ obraSeleccionada, onClose }: any) => {
+  const materiales = Array.isArray(obraSeleccionada?.materiales_asignados) 
+    ? obraSeleccionada.materiales_asignados 
+    : [];
+
   return (
-    <div className="fixed inset-0 z-[110] flex items-center justify-center bg-[#1E293B]/60 backdrop-blur-sm p-4">
-      <div className="bg-white border border-slate-200 rounded-none shadow-2xl w-full max-w-md overflow-hidden animate-in zoom-in-95">
+    <div className="fixed inset-0 z-[110] flex items-center justify-center bg-[#1E293B]/60 backdrop-blur-sm p-4 animate-in fade-in">
+      <div className="bg-white border border-slate-200 rounded-none shadow-2xl w-full max-w-4xl overflow-hidden animate-in zoom-in-95">
         <div className="px-6 py-4 border-b border-slate-100 bg-[#f8fafc] flex justify-between items-center">
           <h3 className="text-md font-black text-[#1E293B] uppercase tracking-tighter flex items-center gap-2">
-            <Users size={18} className="text-[#00B4D8]"/> Personal en Obra
+            <PackagePlus size={18} className="text-[#00B4D8]"/> Expediente Técnico
           </h3>
-          <button onClick={onClose} className="text-slate-300 hover:text-red-500"><X size={20}/></button>
+          <button onClick={onClose} className="text-slate-300 hover:text-red-500 transition-colors"><X size={20}/></button>
         </div>
-        <div className="p-6 space-y-4">
-           <div className="text-center pb-4 border-b border-slate-100">
-              <p className={labelStyle}>Proyecto Activo</p>
-              <p className="font-black text-[#1E293B] uppercase text-[12px]">{obraSeleccionada?.nombre_obra}</p>
-           </div>
-           <div className="max-h-60 overflow-y-auto space-y-2">
-              {obraSeleccionada?.trabajadores_asignados?.length > 0 ? (
-                obraSeleccionada.trabajadores_asignados.map((tId: any) => {
-                   const u = usuarios.find((user: any) => user.id === Number(tId));
-                   return (
-                      <div key={tId} className="flex items-center gap-3 p-3 bg-slate-50 border border-slate-100">
-                         <div className="w-8 h-8 bg-[#1E293B] flex items-center justify-center text-[10px] text-white font-black">ID</div>
-                         <span className="text-[12px] font-bold text-[#1E293B] uppercase">{u?.full_name || `ID: ${tId}`}</span>
-                      </div>
-                   );
-                })
-              ) : (
-                <p className="text-center py-4 text-slate-400 text-[11px] uppercase font-bold">Sin personal asignado</p>
-              )}
-           </div>
-           <button onClick={onClose} className="w-full bg-[#1E293B] text-white py-3 text-[10px] font-black uppercase tracking-widest hover:bg-[#00B4D8] transition-all rounded-none shadow-sm">Cerrar Expediente</button>
+
+        <div className="p-6 space-y-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 bg-slate-50 p-5 border border-slate-100">
+            
+            <div className="space-y-4">
+              {/* NOMBRE Y FECHA */}
+              <div className="flex justify-between items-start gap-4">
+                <div>
+                  <p className="text-[9px] font-black text-slate-400 uppercase mb-1 tracking-widest">Titular / Cliente</p>
+                  <p className="font-black text-[#1E293B] uppercase text-[13px]">
+                    {obraSeleccionada?.cliente_nombre}
+                  </p>
+                </div>
+                <div className="text-right">
+                  <p className="text-[9px] font-black text-slate-400 uppercase mb-1 tracking-widest">Fecha Oficial</p>
+                  <div className="flex items-center gap-1 justify-end font-black text-[12px] text-[#00B4D8]">
+                    <Calendar size={14}/> {obraSeleccionada?.fecha_inicio || '---'}
+                  </div>
+                </div>
+              </div>
+              
+              {/* DIRECCIÓN Y LINK DE GOOGLE MAPS */}
+              <div>
+                <p className="text-[9px] font-black text-slate-400 uppercase mb-1 tracking-widest">Ubicación</p>
+                <div className="flex items-start gap-2">
+                  <MapPin size={16} className="text-red-500 mt-1 shrink-0"/>
+                  <div>
+                    <p className="font-bold text-[11px] text-[#1E293B] uppercase">
+                      {obraSeleccionada?.direccion_cliente}
+                    </p>
+                    {obraSeleccionada?.ubicacion_link?.includes('http') && (
+                      <a href={obraSeleccionada.ubicacion_link} target="_blank" rel="noopener noreferrer" className="text-[#00B4D8] text-[9px] font-black uppercase underline hover:text-[#1E293B] transition-colors mt-1 inline-block">
+                        Ver Ubicación en Google Maps <ExternalLink size={10} className="inline mb-0.5"/>
+                      </a>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="space-y-4">
+              {/* DESCRIPCIÓN */}
+              <div>
+                <p className="text-[9px] font-black text-slate-400 uppercase mb-1 tracking-widest">Descripción Técnica</p>
+                <p className="text-[11px] text-slate-600 italic leading-relaxed bg-white p-2 border border-slate-200 min-h-[50px] whitespace-pre-wrap">
+                  {obraSeleccionada?.descripcion_trabajo}
+                </p>
+              </div>
+              {/* NOTAS */}
+              <div>
+                <p className="text-[9px] font-black text-slate-400 uppercase mb-1 tracking-widest">Notas del Proyecto</p>
+                <p className="text-[11px] font-bold text-[#1E293B] bg-amber-50 p-2 border border-amber-200 whitespace-pre-wrap">
+                  {obraSeleccionada?.nota}
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* TABLA DE MATERIALES */}
+          <div className="max-h-[250px] overflow-y-auto border border-slate-100">
+            <table className="w-full text-left">
+              <thead className="sticky top-0 bg-white shadow-sm z-10">
+                <tr className="text-slate-400 border-b border-slate-100 bg-slate-50">
+                  <th className="p-3 font-black uppercase text-[9px] tracking-widest">Cant.</th>
+                  <th className="p-3 font-black uppercase text-[9px] tracking-widest">Descripción Técnica del Material</th>
+                  <th className="p-3 text-right font-black uppercase text-[9px] tracking-widest">Estado</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-50">
+                {materiales.length > 0 ? (
+                  materiales.map((item: any, idx: number) => (
+                    <tr key={idx} className="hover:bg-slate-50/50">
+                      <td className="p-3 font-black text-[#00B4D8] text-[18px] font-mono w-24">{item.cantidad}</td>
+                      <td className="p-3 font-black text-[#1E293B] uppercase text-[12px]">{item.producto}</td>
+                      <td className="p-3 text-right">
+                         <span className="text-[9px] font-black uppercase bg-emerald-50 text-emerald-600 border border-emerald-100 px-2 py-1">
+                           En Obra
+                         </span>
+                      </td>
+                    </tr>
+                  ))
+                ) : (
+                  <tr>
+                    <td colSpan={3} className="py-10 text-center text-[10px] font-black uppercase text-slate-400">
+                      No hay materiales asignados.
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+          <button onClick={onClose} className="w-full bg-[#1E293B] text-white py-4 font-black uppercase tracking-widest text-[11px] hover:bg-[#00B4D8] transition-all">
+            Cerrar Expediente
+          </button>
         </div>
       </div>
     </div>

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { clientesService, inventarioService, finanzasService, usuariosService } from '../../services/supabase'; 
+import { clientesService, inventarioService, finanzasService, usuariosService, obrasService } from '../../services/supabase'; 
 import type { Cliente, UsuarioSistema } from '../../services/supabase';
 import { Search, Calendar, LayoutTemplate, Building2, Loader2, ChevronDown, CheckCircle2, Trash2 } from 'lucide-react';
 import { CotizacionGenerador } from './CotizacionGenerador'; 
@@ -49,12 +49,83 @@ export const CotizacionesTab = ({ zoom, filtroInicial = '', onFiltroChange }: { 
     setCargandoHistorial(false);
   };
 
-  const actualizarCotizacionRapida = async (id: number, cambios: any) => {
+  // src/sections/clientes/CotizacionesTab.tsx
+
+// ... (dentro del componente CotizacionesTab)
+
+const actualizarCotizacionRapida = async (id: number, cambios: any) => {
+  try {
+    await finanzasService.actualizarEstadoCotizacion(id, cambios.estado);
+    
+    const cotizacionCompleta = historialCotizaciones.find(c => c.id === id);
+    
+    if (cambios.estado === 'Aprobado') {
+      const obrasActuales = await obrasService.listar();
+      const yaExiste = obrasActuales.some(o => o.cliente_id === cotizacionCompleta.cliente_id && o.estado !== 'Finalizada');
+      if (!yaExiste && cotizacionCompleta) {
+        await crearProyectoDesdeCotizacion(cotizacionCompleta);
+      }
+    } 
+    else if (cambios.estado === 'Pendiente' || cambios.estado === 'Rechazado') {
+      if (cotizacionCompleta) {
+        const obrasActuales = await obrasService.listar();
+        const obrasAsociadas = obrasActuales.filter(o => o.cliente_id === cotizacionCompleta.cliente_id && o.estado !== 'Finalizada');
+        for (const obra of obrasAsociadas) {
+          await obrasService.eliminar(obra.id!);
+        }
+      }
+    }
+    await cargarHistorial();
+  } catch (e) {
+    alert("Error al actualizar estado");
+  }
+};
+
+// Dentro de CotizacionesTab.tsx
+// src/sections/clientes/CotizacionesTab.tsx
+
+const crearProyectoDesdeCotizacion = async (cot: any) => {
     try {
-      await finanzasService.actualizarEstadoCotizacion(id, cambios.estado || undefined);
-      await cargarHistorial();
-    } catch (e) {
-      alert("Error al actualizar");
+      // 🟢 Seguro de lectura para extraer los materiales correctamente
+      let detallesArray = [];
+      if (typeof cot.detalles === 'string') {
+        try { detallesArray = JSON.parse(cot.detalles); } catch(e) {}
+      } else if (Array.isArray(cot.detalles)) {
+        detallesArray = cot.detalles;
+      }
+
+      const materialesPrecargados = detallesArray.flatMap((grupo: any) => 
+        (grupo.items || []).map((item: any) => ({
+          id: Date.now() + Math.random(),
+          codigo: item.codigo,
+          producto: item.producto,
+          unidad: item.unidad || 'UND',
+          cantidad: item.cantidad,
+          precioUnit: item.precioUnit,
+          fecha_retiro: new Date().toISOString(),
+          trabajador_nombre: 'SISTEMA (COTIZACIÓN)'
+        }))
+      );
+
+      const dataObras = await obrasService.listar();
+      const correlativo = (dataObras || []).length + 1;
+
+      // 🟢 Eliminamos los campos que no existen en la base de datos de obras
+      await obrasService.crear({
+        codigo_obra: `OBRA-${String(correlativo).padStart(4, '0')}`,
+        nombre_obra: `PROYECTO: ${cot.clientes?.nombre_cliente || 'SIN TITULAR'}`,
+        cliente_id: cot.cliente_id,
+        estado: 'En proceso',
+        costo_acumulado: 0,
+        monto_pagado: 0,
+        materiales_asignados: materialesPrecargados,
+        fecha_inicio: new Date().toISOString().split('T')[0]
+      });
+
+      alert("✅ Proyecto creado con éxito en el Núcleo de Obras.");
+    } catch (error) {
+      console.error("Error al crear obra:", error);
+      alert("Error al crear el proyecto. Verifica la consola.");
     }
   };
 
@@ -70,18 +141,30 @@ export const CotizacionesTab = ({ zoom, filtroInicial = '', onFiltroChange }: { 
     return coincideC && coincideF && coincideS;
   });
   const handleEliminar = async (id: number) => {
-  if (window.confirm("¿Estás seguro de eliminar esta cotización? Esta acción no se puede deshacer.")) {
+  // Aviso actualizado
+  if (window.confirm("¿Estás seguro de eliminar esta cotización? Esta acción no se puede deshacer y ELIMINARÁ el proyecto activo en Obras.")) {
     try {
+      const cotizacionCompleta = historialCotizaciones.find(c => c.id === id);
+      
+      // NUEVA LÓGICA: Antes de borrar la cotización, borramos su proyecto activo
+      if (cotizacionCompleta) {
+        const obrasActuales = await obrasService.listar();
+        const obrasAsociadas = obrasActuales.filter(o => o.cliente_id === cotizacionCompleta.cliente_id && o.estado !== 'Finalizada');
+        for (const obra of obrasAsociadas) {
+           await obrasService.eliminar(obra.id!);
+        }
+      }
+
+      // Ahora sí, eliminamos la cotización de finanzas
       await finanzasService.eliminarCotizacion(id);
-      alert("Cotización eliminada correctamente.");
-      // Aquí debes llamar a la función que recarga la lista (ej: fetchCotizaciones)
+      alert("Cotización y proyecto eliminados correctamente.");
       cargarHistorial(); 
     } catch (error) {
       console.error(error);
       alert("Error al intentar eliminar.");
     }
   }
-  };
+};
   return (
     <div className="flex flex-col animate-in fade-in duration-500 pb-10" style={{ fontSize: `${(zoom / 100) * 12}px` }}>
       
@@ -171,46 +254,38 @@ export const CotizacionesTab = ({ zoom, filtroInicial = '', onFiltroChange }: { 
                       </td>
                       <td className="p-5 font-black text-right font-mono">S/ {cot.monto_total.toFixed(2)}</td>
                       <td className="p-5 text-center">
-                         <select 
-                            value={cot.estado} 
-                            onChange={(e) => actualizarCotizacionRapida(cot.id, { estado: e.target.value })}
-                            className={`px-3 py-1 text-[9px] font-black uppercase border-2 outline-none cursor-pointer transition-all ${
-                                cot.estado === 'Aprobado' ? 'border-emerald-500 text-emerald-600 bg-emerald-50' : 
-                                cot.estado === 'Rechazado' ? 'border-red-500 text-red-600 bg-red-50' : 'border-orange-400 text-orange-500'
-                            }`}
-                         >
-                           <option value="Pendiente">PENDIENTE</option>
-                           <option value="Aprobado">APROBADO</option>
-                           <option value="Rechazado">RECHAZADO</option>
-                         </select>
-                      </td>
+   <select 
+      value={cot.estado} 
+      // 🟢 ESTA ES LA CONEXIÓN QUE ELIMINA EL ERROR:
+      onChange={(e) => actualizarCotizacionRapida(cot.id, { estado: e.target.value })} 
+      className={`px-3 py-1 text-[9px] font-black uppercase border-2 outline-none cursor-pointer transition-all ${
+          cot.estado === 'Aprobado' ? 'border-emerald-500 text-emerald-600 bg-emerald-50' : 
+          cot.estado === 'Rechazado' ? 'border-red-500 text-red-600 bg-red-50' : 'border-orange-400 text-orange-500'
+      }`}
+   >
+     <option value="Pendiente">PENDIENTE</option>
+     <option value="Aprobado">APROBADO</option>
+     <option value="Rechazado">RECHAZADO</option>
+   </select>
+</td>
                       <td className="p-5 text-center">
-  <div className="flex gap-2 justify-center">
-    {cot.estado === 'Aprobado' ? (
-      <span className="text-emerald-600 flex items-center gap-1 font-black text-[10px] uppercase italic">
-        <CheckCircle2 size={16}/> Oficial
-      </span>
-    ) : (
-      <>
-        {/* BOTÓN EDITAR EXISTENTE */}
-        <button 
-          onClick={() => { setCotizacionParaEditar(cot); setVistaActiva('crear'); }} 
-          className="bg-[#1e293b] text-white px-3 py-1.5 text-[9px] font-black uppercase hover:bg-[#00B4D8] transition-all flex items-center gap-2"
-        >
-          <Building2 size={14}/> Editar
-        </button>
-
-        {/* BOTÓN BORRAR NUEVO */}
-        <button
-          onClick={() => handleEliminar(cot.id)}
-          className="bg-red-50 text-red-600 border border-red-200 px-3 py-1.5 text-[9px] font-black uppercase hover:bg-red-600 hover:text-white transition-all flex items-center gap-2"
-          title="Eliminar Cotización"
-        >
-          <Trash2 size={14} /> Borrar
-        </button>
-      </>
-    )}
-  </div>
+  <div className="flex gap-2 justify-center items-center">
+  {cot.estado !== 'Aprobado' && (
+  <button
+    onClick={() => handleEliminar(cot.id)} // <--- CONECTA LA FUNCIÓN AQUÍ
+    className="bg-red-50 text-red-600 border border-red-200 px-3 py-1.5 text-[9px] font-black uppercase hover:bg-red-600 hover:text-white transition-all flex items-center gap-2"
+    title="Eliminar Cotización"
+  >
+    <Trash2 size={14} /> Borrar
+  </button>
+)}
+  <button 
+    onClick={() => { setCotizacionParaEditar(cot); setVistaActiva('crear'); }} 
+    className="bg-[#1e293b] text-white px-3 py-1.5 text-[9px] font-black uppercase hover:bg-[#00B4D8] transition-all flex items-center gap-2"
+  >
+    <Building2 size={14}/> Editar
+  </button>
+</div>
 </td>
                     </tr>
                   );

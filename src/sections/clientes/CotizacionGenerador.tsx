@@ -759,22 +759,18 @@ export const CotizacionGenerador = ({ clientes, productos, cotizacionPrevia, onS
             {busquedaCliente || 'NOMBRE DEL CLIENTE'}
         </p>
         
+        {/* === AQUÍ SE AGREGA LA DESCRIPCIÓN EN TIEMPO REAL === */}
+        {descripcionTrabajo && (
+            <p className="text-[10px] text-[#1e293b] font-bold mb-2 uppercase whitespace-pre-wrap">
+                <span className="text-[9px] text-slate-400 font-black">REF: </span>
+                {descripcionTrabajo}
+            </p>
+        )}
+        {/* ==================================================== */}
+        
         <p className="text-[10px] text-slate-600 font-medium italic">
             A su gentil solicitud detallamos lo siguiente:
         </p>
-
-        {/* === DESCRIPCIÓN DEBAJO DE LA SOLICITUD === */}
-        {descripcionTrabajo && (
-            <div className="mt-3 p-2.5 bg-slate-50 border-l-2 border-[#00B4D8]">
-                <p className="text-[8px] font-black text-[#00B4D8] uppercase tracking-widest mb-1">
-                    DESCRIPCIÓN:
-                </p>
-                <p className="text-[10px] text-slate-700 font-bold uppercase whitespace-pre-wrap leading-relaxed">
-                    {descripcionTrabajo}
-                </p>
-            </div>
-        )}
-        {/* ========================================= */}
     </div>
     {/* ... resto del código (Descripción del trabajo, etc.) */}
     </>

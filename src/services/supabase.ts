@@ -58,7 +58,13 @@ export interface Obra {
   materiales_asignados?: any[];
   trabajadores_asignados?: any[];
   created_at?: string;
-  clientes?: { nombre_cliente: string }; 
+  nota?: string;                 // <-- AÑADIDO
+  descripcion_trabajo?: string;  // <-- AÑADIDO
+  clientes?: { 
+    nombre_cliente: string; 
+    direccion?: string;          // <-- AÑADIDO
+    ubicacion_link?: string;     // <-- AÑADIDO
+  }; 
 }
 
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
@@ -117,9 +123,17 @@ export const inventarioService = {
 };
 
 // --- SERVICIO DE OBRAS ---
+// src/services/supabase.ts
+
+// src/services/supabase.ts
+
 export const obrasService = {
   async listar() {
-    const { data, error } = await supabase.from('obras').select('*, clientes(nombre_cliente)').order('id', { ascending: false });
+    const { data, error } = await supabase
+      .from('obras')
+      // EL SECRETO ESTÁ AQUÍ: Pedir dirección y ubicacion_link
+      .select('*, clientes(nombre_cliente, direccion, ubicacion_link)') 
+      .order('id', { ascending: false });
     if (error) throw error;
     return data as Obra[];
   },
@@ -128,14 +142,25 @@ export const obrasService = {
     if (error) throw error;
     return data[0];
   },
+  // RESTAURAR ESTE MÉTODO
   async actualizar(id: number, obra: any) {
     const { data, error } = await supabase.from('obras').update(obra).eq('id', id).select();
     if (error) throw error;
     return data[0];
   },
+  // RESTAURAR ESTE MÉTODO
   async eliminar(id: number) {
     const { error } = await supabase.from('obras').delete().eq('id', id);
     if (error) throw error;
+  },
+  // MANTENER ESTE MÉTODO PARA EL CIERRE
+  async finalizarObra(id: number) {
+    const { data, error } = await supabase
+      .from('obras')
+      .update({ estado: 'Finalizada', fecha_termino: new Date().toISOString() })
+      .eq('id', id);
+    if (error) throw error;
+    return data;
   }
 };
 
@@ -195,7 +220,8 @@ export const finanzasService = {
 
   async listarCotizacionesTodas() {
     const { data, error } = await supabase.from('cotizaciones_historial')
-      .select('*, clientes(nombre_cliente), pagos(*)')
+      // EL SECRETO ESTÁ AQUÍ TAMBIÉN
+      .select('*, clientes(nombre_cliente, direccion, ubicacion_link), pagos(*)')
       .order('created_at', { ascending: false });
     if (error) throw error;
     return data;
