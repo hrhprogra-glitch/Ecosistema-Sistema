@@ -7,9 +7,16 @@ yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
 
-node_modules
-dist
-dist-ssr
+# Dependencias y Empaquetado (Square Structure)
+node_modules/
+dist/
+dist-ssr/
+*.zip
+
+# Variables de Entorno y Seguridad (CRÍTICO)
+.env
+.env.*
+.env.local
 *.local
 
 # Editor directories and files
@@ -22,6 +29,3 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
-
-VITE_TURSO_DATABASE_URL=libsql://tu-base-de-datos.turso.io
-VITE_TURSO_AUTH_TOKEN=tu_token_aqui
