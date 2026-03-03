@@ -1,6 +1,6 @@
 // src/sections/almacen/InventarioGeneral.tsx
 import { useState, useEffect } from 'react';
-import { Search, Plus, Package, Edit2, Trash2, X, Loader2, Save, DollarSign, AlertTriangle, Calculator, CalendarClock, Box, Scale, Ruler, Info, History } from 'lucide-react';
+import { Search, Plus, Package, Edit2, Trash2, X, Loader2, Save, DollarSign, AlertTriangle, Calculator, CalendarClock, Box, Scale, Ruler, History } from 'lucide-react';
 import { inventarioService } from '../../services/supabase';
 
 // --- INTERFACES ---
@@ -580,7 +580,7 @@ export const InventarioGeneral = ({ zoom }: { zoom: number }) => {
              <div className="flex-1 bg-slate-50 p-8 overflow-y-auto">
                 {(productoSeleccionado.lotes || []).length > 0 ? (
                   <div className="space-y-4">
-                     {[...(productoSeleccionado.lotes || [])].reverse().map((lote, idx) => {
+                     {[...(productoSeleccionado.lotes || [])].reverse().map((lote) => {
                         const { fecha, hora } = formatearFechaHora(lote.fecha);
                         return (
                            <div key={lote.id} className="bg-white border border-slate-200 rounded-none p-5 shadow-none flex flex-col md:flex-row justify-between items-center gap-4 hover:border-[#00B4D8] transition-colors group">

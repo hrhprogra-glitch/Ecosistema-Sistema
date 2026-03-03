@@ -1,5 +1,5 @@
 // src/sections/obras/ObrasModals.tsx
-import { X, Shield, Save, PackagePlus, DollarSign, Loader2, MapPin, Calendar, FileText, ExternalLink } from 'lucide-react';
+import { X, Shield, Save, PackagePlus, DollarSign, Loader2, MapPin, Calendar, FileText } from 'lucide-react';
 
 const labelStyle = "block text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-2";
 const inputStyle = "w-full bg-white border border-slate-200 p-3 text-[13px] font-bold uppercase rounded-none outline-none focus:border-[#00B4D8] transition-all shadow-sm";
