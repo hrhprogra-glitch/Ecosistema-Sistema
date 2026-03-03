@@ -69,9 +69,25 @@ export interface Obra {
   }; 
 }
 
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
-export const supabase = createClient(supabaseUrl, supabaseKey);
+// 1. Intentamos leer las variables de entorno (Local/Netlify)
+const envUrl = import.meta.env.VITE_SUPABASE_URL;
+const envKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+
+// 2. Aplicamos un "Fallback" (Respaldo Seguro)
+// Si Netlify falla en leer el entorno, usará estas cadenas directamente.
+// REEMPLAZA LOS TEXTOS ENTRE COMILLAS CON TUS DATOS REALES DE SUPABASE
+const supabaseUrl = envUrl || "https://tu-proyecto-real.supabase.co";
+const supabaseKey = envKey || "tu_token_anon_key_real_aqui";
+
+// 3. Inicialización blindada
+if (!supabaseUrl || !supabaseKey) {
+  console.error("Fallo estructural: Credenciales de Supabase no inyectadas.");
+}
+
+export const supabase = createClient(
+  supabaseUrl as string, 
+  supabaseKey as string
+);
 
 // --- SERVICIO DE CLIENTES ---
 export const clientesService = {
