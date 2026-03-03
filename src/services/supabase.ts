@@ -76,8 +76,8 @@ const envKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 // 2. Aplicamos un "Fallback" (Respaldo Seguro)
 // Si Netlify falla en leer el entorno, usará estas cadenas directamente.
 // REEMPLAZA LOS TEXTOS ENTRE COMILLAS CON TUS DATOS REALES DE SUPABASE
-const supabaseUrl = envUrl || "https://tu-proyecto-real.supabase.co";
-const supabaseKey = envKey || "tu_token_anon_key_real_aqui";
+const supabaseUrl = envUrl || "https://nnoujhevzfylxnygccle.supabase.co";
+const supabaseKey = envKey || "sb_publishable_2-kYi2TQ_rTlj0DnBTSpFw_m7FbEKmi";
 
 // 3. Inicialización blindada
 if (!supabaseUrl || !supabaseKey) {
