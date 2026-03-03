@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { finanzasService } from '../../services/supabase';
+import { finanzasService, obrasService } from '../../services/supabase';
 import type { Cliente } from '../../services/supabase';
 import { Plus, Trash2, Save, Loader2, ChevronDown, Check } from 'lucide-react';
 import html2canvas from 'html2canvas-pro';
@@ -74,18 +74,59 @@ export const CotizacionGenerador = ({ clientes, productos, cotizacionPrevia, onS
   };
 
   useEffect(() => {
-    if (cotizacionPrevia) {
-      const cliente = clientes.find(c => c.id === cotizacionPrevia.cliente_id);
-      setClienteSelect(cliente || null);
-      if (cliente) setBusquedaCliente(cliente.nombre_cliente);
-      setFechaCotizacion(cotizacionPrevia.fecha_emision || new Date().toISOString().split('T')[0]);
-      setNota(cotizacionPrevia.nota || '');
-      setDescripcionTrabajo(cotizacionPrevia.descripcion_trabajo || '');
-      if (cotizacionPrevia.detalles && cotizacionPrevia.detalles.length > 0) {
-        setGrupos(cotizacionPrevia.detalles);
-        setGrupoExpandidoId(cotizacionPrevia.detalles[0].id);
+    const cargarDatosRevision = async () => {
+      if (cotizacionPrevia) {
+        const cliente = clientes.find(c => c.id === cotizacionPrevia.cliente_id);
+        setClienteSelect(cliente || null);
+        if (cliente) setBusquedaCliente(cliente.nombre_cliente);
+        setFechaCotizacion(cotizacionPrevia.fecha_emision || new Date().toISOString().split('T')[0]);
+        setNota(cotizacionPrevia.nota || '');
+        setDescripcionTrabajo(cotizacionPrevia.descripcion_trabajo || '');
+        
+        // --- AQUÍ EMPIEZA LA MAGIA DE LA LIQUIDACIÓN ---
+        if (cotizacionPrevia.esRevisionFinal) {
+           try {
+             const todasObras = await obrasService.listar();
+             // Buscamos la obra finalizada más reciente de este cliente
+             const obraFinalizada = todasObras.find(o => o.cliente_id === cotizacionPrevia.cliente_id && o.estado === 'Finalizada');
+
+             if (obraFinalizada && obraFinalizada.materiales_asignados && obraFinalizada.materiales_asignados.length > 0) {
+               // Mapeamos los materiales que REALMENTE salieron de almacén
+               const itemsReales = [{
+                 id: Date.now(),
+                 subtitulo: 'LIQUIDACIÓN OFICIAL DE MATERIALES USADOS',
+                 items: obraFinalizada.materiales_asignados.map((m: any) => ({
+                   id: m.id || Date.now() + Math.random(),
+                   codigo: m.codigo,
+                   producto: m.producto,
+                   unidad: m.unidad || 'UND',
+                   cantidad: m.cantidad,
+                   precioUnit: m.precioUnit || 0,
+                   total: (m.cantidad * (m.precioUnit || 0)),
+                   moneda: m.moneda || 'S/'
+                 }))
+               }];
+               setGrupos(itemsReales);
+               setGrupoExpandidoId(itemsReales[0].id);
+               setNota(`Liquidación basada en el proyecto de Obra: ${obraFinalizada.codigo_obra}.\n\nNota Original:\n${cotizacionPrevia.nota || ''}`);
+             } else {
+               // Si no hay materiales cargamos los originales de la cotización
+               if (cotizacionPrevia.detalles && cotizacionPrevia.detalles.length > 0) {
+                 setGrupos(cotizacionPrevia.detalles);
+                 setGrupoExpandidoId(cotizacionPrevia.detalles[0].id);
+               }
+             }
+           } catch(e) { console.error(e); }
+        } else {
+          // Edición Normal de cotizaciones (Pendiente, Aprobada, etc.)
+          if (cotizacionPrevia.detalles && cotizacionPrevia.detalles.length > 0) {
+            setGrupos(cotizacionPrevia.detalles);
+            setGrupoExpandidoId(cotizacionPrevia.detalles[0].id);
+          }
+        }
       }
-    }
+    };
+    cargarDatosRevision();
   }, [cotizacionPrevia, clientes]);
 
   // Modificado para usar terminoFiltro y no busquedaCliente
@@ -204,10 +245,10 @@ export const CotizacionGenerador = ({ clientes, productos, cotizacionPrevia, onS
         cliente_id: clienteSelect.id,
         fecha_emision: fechaCotizacion,
         monto_total: granTotal,
-        estado: cotizacionPrevia?.estado || 'Pendiente',
+        estado: cotizacionPrevia?.estado || 'Pendiente', // <--- Se mantiene en Obra Terminada
         nota: nota,
         detalles: grupos,
-        // descripcion_trabajo: descripcionTrabajo // <-- Descomenta esta línea si ya agregaste la columna en SQL
+        descripcion_trabajo: descripcionTrabajo 
       };
 
       // 2. Solo le mandamos el ID si es una EDICIÓN (si ya existe). 

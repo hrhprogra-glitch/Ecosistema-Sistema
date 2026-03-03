@@ -18,6 +18,7 @@ export const AdminDashboard = () => {
   const [tab, setTab] = useState<'dashboard' | 'personal' | 'clientes' | 'almacen' | 'obras' | 'salida_directa' | 'devolucion_directa'>('dashboard');
   const [subTabClientes, setSubTabClientes] = useState<'lista' | 'cotizaciones' | 'historial'>('lista');
   const [isExpanded, setIsExpanded] = useState(true); 
+  const [obraParaSalida, setObraParaSalida] = useState<any>(null); // <--- NUEVO ESTADO PARA CONECTAR OBRAS CON SALIDAS
   const navigate = useNavigate();
 
   // Mapeo de títulos de sección
@@ -28,7 +29,7 @@ export const AdminDashboard = () => {
     almacen: 'Inventario de Almacén',
     obras: 'Control de Proyectos',
     salida_directa: 'Registro de Salidas',
-    devolucion_directa: 'Retorno de Equipos'
+    devolucion_directa:'Historial de Movimientos'
   };
 
   const irASeccionCliente = (sub: 'lista' | 'cotizaciones' | 'historial') => {
@@ -81,8 +82,8 @@ export const AdminDashboard = () => {
 
           <div className="mt-8 mb-2">
             {isExpanded && <p className="px-6 text-[9px] font-black text-[#00B4D8] uppercase tracking-[0.2em] mb-2 opacity-70">Operaciones</p>}
-            <SidebarItem id="salidas" label="Salidas" icon={<ArrowUpRight size={20} />} active={tab === 'salida_directa'} onClick={() => setTab('salida_directa')} />
-            <SidebarItem id="devoluciones" label="Retornos" icon={<ArrowDownRight size={20} />} active={tab === 'devolucion_directa'} onClick={() => setTab('devolucion_directa')} />
+            <SidebarItem id="salidas" label="Salida/Devolución" icon={<ArrowUpRight size={20} />} active={tab === 'salida_directa'} onClick={() => setTab('salida_directa')} />
+            <SidebarItem id="devoluciones" label="Historial" icon={<ArrowDownRight size={20} />} active={tab === 'devolucion_directa'} onClick={() => setTab('devolucion_directa')} />
             <SidebarItem id="obras" label="Proyectos" icon={<Building2 size={20} />} active={tab === 'obras'} />
           </div>
 
@@ -131,8 +132,8 @@ export const AdminDashboard = () => {
                 {(tab === 'obras' || tab === 'salida_directa' || tab === 'devolucion_directa') && (
                   <>
                     <button onClick={() => setTab('obras')} className={`px-4 py-2 text-[10px] font-black uppercase tracking-widest transition-all ${tab === 'obras' ? 'bg-[#00B4D8] text-white shadow-md' : 'text-slate-400 hover:text-[#00B4D8]'}`}>Obras</button>
-                    <button onClick={() => setTab('salida_directa')} className={`px-4 py-2 text-[10px] font-black uppercase tracking-widest transition-all ${tab === 'salida_directa' ? 'bg-[#00B4D8] text-white shadow-md' : 'text-slate-400 hover:text-[#00B4D8]'}`}>Salidas</button>
-                    <button onClick={() => setTab('devolucion_directa')} className={`px-4 py-2 text-[10px] font-black uppercase tracking-widest transition-all ${tab === 'devolucion_directa' ? 'bg-[#00B4D8] text-white shadow-md' : 'text-slate-400 hover:text-[#00B4D8]'}`}>Devolución</button>
+                    <button onClick={() => setTab('salida_directa')} className={`px-4 py-2 text-[10px] font-black uppercase tracking-widest transition-all ${tab === 'salida_directa' ? 'bg-[#00B4D8] text-white shadow-md' : 'text-slate-400 hover:text-[#00B4D8]'}`}>Salida/Devolución</button>
+                    <button onClick={() => setTab('devolucion_directa')} className={`px-4 py-2 text-[10px] font-black uppercase tracking-widest transition-all ${tab === 'devolucion_directa' ? 'bg-[#00B4D8] text-white shadow-md' : 'text-slate-400 hover:text-[#00B4D8]'}`}>Historial</button>
                   </>
                 )}
               </div>
@@ -163,8 +164,15 @@ export const AdminDashboard = () => {
   />
 )}
             {tab === 'almacen' && <AlmacenTab zoom={100} subTab="inventario" />}
-            {tab === 'obras' && <ObrasTab />}
-            {tab === 'salida_directa' && <SalidaObra zoom={100} />}
+            {tab === 'obras' && (
+              <ObrasTab 
+                onNavigateToSalidas={(obra) => { 
+                  setObraParaSalida(obra); 
+                  setTab('salida_directa'); 
+                }} 
+              />
+            )}
+            {tab === 'salida_directa' && <SalidaObra zoom={100} obraInicial={obraParaSalida} />}
             {tab === 'devolucion_directa' && <DevolucionesTab zoom={100} />}
           </div>
         </div>

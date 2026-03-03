@@ -1,33 +1,24 @@
+// src/App.tsx
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { LoginSection } from './sections/LoginSection';
 import { AdminDashboard } from './sections/AdminDashboard';
+import { EmpleadoDashboard } from './sections/empleado/EmpleadoDashboard'; // Importamos el nuevo Panel Restringido
 import './index.css';
-
-// Panel de Empleado (Placeholder)
-const EmpleadoPanel = () => (
-  <div className="p-10 text-white bg-[#0b1121] min-h-screen font-sans">
-    <h1 className="text-2xl font-black uppercase tracking-widest border-l-4 border-cyan-500 pl-4">
-      Panel de Empleado
-    </h1>
-    <p className="mt-4 text-slate-400 font-medium">
-      Módulo en construcción...
-    </p>
-  </div>
-);
 
 function App() {
   return (
-    // EL ROUTER DEBE ENVOLVER TODO
     <BrowserRouter>
       <Routes>
         {/* Ruta Login (Inicio) */}
         <Route path="/" element={<LoginSection />} />
 
-        {/* Rutas Protegidas */}
+        {/* Ruta para Administradores Globales */}
         <Route path="/admin" element={<AdminDashboard />} />
-        <Route path="/empleado" element={<EmpleadoPanel />} />
+        
+        {/* Ruta Restringida para Trabajadores/Operarios */}
+        <Route path="/empleado" element={<EmpleadoDashboard />} />
 
-        {/* Redirección por defecto */}
+        {/* Redirección por defecto ante rutas inexistentes */}
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </BrowserRouter>

@@ -253,41 +253,125 @@ const crearProyectoDesdeCotizacion = async (cot: any) => {
                          </select>
                       </td>
                       <td className="p-5 font-black text-right font-mono">S/ {cot.monto_total.toFixed(2)}</td>
-                      <td className="p-5 text-center">
-   <select 
-      value={cot.estado} 
-      // 🟢 ESTA ES LA CONEXIÓN QUE ELIMINA EL ERROR:
-      onChange={(e) => actualizarCotizacionRapida(cot.id, { estado: e.target.value })} 
-      className={`px-3 py-1 text-[9px] font-black uppercase border-2 outline-none cursor-pointer transition-all ${
-          cot.estado === 'Aprobado' ? 'border-emerald-500 text-emerald-600 bg-emerald-50' : 
-          cot.estado === 'Rechazado' ? 'border-red-500 text-red-600 bg-red-50' : 'border-orange-400 text-orange-500'
-      }`}
-   >
-     <option value="Pendiente">PENDIENTE</option>
-     <option value="Aprobado">APROBADO</option>
-     <option value="Rechazado">RECHAZADO</option>
-   </select>
+                     <td className="p-5 text-center">
+   {cot.estado === 'Finalizado' || cot.estado === 'Obra Terminada' ? (
+     <span className={`px-3 py-1 text-[9px] font-black uppercase border-2 ${
+       cot.estado === 'Finalizado' ? 'border-blue-500 text-blue-600 bg-blue-50' : 'border-emerald-600 text-emerald-700 bg-emerald-100'
+     }`}>
+       {cot.estado}
+     </span>
+   ) : (
+     <select 
+        value={cot.estado} 
+        onChange={(e) => actualizarCotizacionRapida(cot.id, { estado: e.target.value })} 
+        className={`px-3 py-1 text-[9px] font-black uppercase border-2 outline-none cursor-pointer transition-all ${
+            cot.estado === 'Aprobado' ? 'border-emerald-500 text-emerald-600 bg-emerald-50' : 
+            cot.estado === 'Rechazado' ? 'border-red-500 text-red-600 bg-red-50' : 'border-orange-400 text-orange-500'
+        }`}
+     >
+       <option value="Pendiente">PENDIENTE</option>
+       <option value="Aprobado">APROBADO</option>
+       <option value="Rechazado">RECHAZADO</option>
+     </select>
+   )}
 </td>
-                      <td className="p-5 text-center">
+<td className="p-5 text-center">
   <div className="flex gap-2 justify-center items-center">
-  {cot.estado !== 'Aprobado' && (
-  <button
-    onClick={() => handleEliminar(cot.id)} // <--- CONECTA LA FUNCIÓN AQUÍ
-    className="bg-red-50 text-red-600 border border-red-200 px-3 py-1.5 text-[9px] font-black uppercase hover:bg-red-600 hover:text-white transition-all flex items-center gap-2"
-    title="Eliminar Cotización"
-  >
-    <Trash2 size={14} /> Borrar
-  </button>
-)}
-  <button 
-    onClick={() => { setCotizacionParaEditar(cot); setVistaActiva('crear'); }} 
-    className="bg-[#1e293b] text-white px-3 py-1.5 text-[9px] font-black uppercase hover:bg-[#00B4D8] transition-all flex items-center gap-2"
-  >
-    <Building2 size={14}/> Editar
-  </button>
-</div>
+    
+    {/* Botón Borrar (Oculto en Aprobado, Finalizado y Obra Terminada por seguridad) */}
+    {cot.estado !== 'Aprobado' && cot.estado !== 'Finalizado' && cot.estado !== 'Obra Terminada' && (
+      <button
+        onClick={() => handleEliminar(cot.id)}
+        className="bg-red-50 text-red-600 border border-red-200 px-3 py-1.5 text-[9px] font-black uppercase hover:bg-red-600 hover:text-white transition-all flex items-center gap-2"
+        title="Eliminar Cotización"
+      >
+        <Trash2 size={14} /> Borrar
+      </button>
+    )}
+
+    {/* Lógica cuando está en OBRA TERMINADA */}
+    {cot.estado === 'Obra Terminada' && (
+      <>
+        <button 
+          onClick={() => {
+            setCotizacionParaEditar({
+              ...cot,
+              esRevisionFinal: true // Para que el Generador extraiga los materiales
+            });
+            setVistaActiva('crear');
+          }} 
+          className="bg-emerald-600 text-white px-3 py-1.5 text-[9px] font-black uppercase hover:bg-emerald-700 transition-all flex items-center gap-2 shadow-sm"
+          title="Ver lo que salió de almacén"
+        >
+          <LayoutTemplate size={14}/> Liquidación
+        </button>
+        
+        {/* Siempre puede Editar */}
+        <button 
+          onClick={() => { setCotizacionParaEditar(cot); setVistaActiva('crear'); }} 
+          className="bg-[#1e293b] text-white px-3 py-1.5 text-[9px] font-black uppercase hover:bg-[#00B4D8] transition-all flex items-center gap-2"
+        >
+          <Building2 size={14}/> Editar
+        </button>
+
+        {/* Botón para Aceptar Modificaciones y pasar a FINALIZADO */}
+        <button 
+          onClick={() => {
+            if(window.confirm("¿Aceptar modificaciones como el final oficial de la obra?")) {
+              actualizarCotizacionRapida(cot.id, { estado: 'Finalizado' })
+            }
+          }}
+          className="bg-blue-600 text-white px-3 py-1.5 text-[9px] font-black uppercase hover:bg-blue-700 transition-all flex items-center gap-2 shadow-sm"
+        >
+          <CheckCircle2 size={14}/> Aceptar Final
+        </button>
+      </>
+    )}
+
+    {/* Lógica cuando el proceso ya fue FINALIZADO por completo */}
+    {cot.estado === 'Finalizado' && (
+      <>
+        <div className="flex flex-col items-center gap-1">
+           <span className="text-blue-600 font-black text-[9px] uppercase italic flex items-center gap-1">
+             <CheckCircle2 size={12}/> Oficializado
+           </span>
+           <button 
+             onClick={() => {
+               if(window.confirm("¿Retomar a 'Obra Terminada'? Esto te permitirá volver a editarla y liquidarla.")) {
+                 actualizarCotizacionRapida(cot.id, { estado: 'Obra Terminada' })
+               }
+             }}
+             className="text-slate-400 hover:text-red-500 text-[9px] font-black uppercase underline transition-colors"
+           >
+             Retomar
+           </button>
+        </div>
+        <button 
+          onClick={() => { 
+  setCotizacionParaEditar({ ...cot, esRevisionFinal: true }); 
+  setVistaActiva('crear'); 
+}} 
+          className="bg-[#1e293b] text-white px-3 py-1.5 text-[9px] font-black uppercase hover:bg-[#00B4D8] transition-all flex items-center gap-2"
+          title="Editar Cotización Finalizada"
+        >
+          <Building2 size={14}/> Editable
+        </button>
+      </>
+    )}
+
+    {/* Botón Editar normal para estados iniciales (Pendiente, Rechazado, etc) */}
+    {cot.estado !== 'Obra Terminada' && cot.estado !== 'Finalizado' && (
+      <button 
+        onClick={() => { setCotizacionParaEditar(cot); setVistaActiva('crear'); }} 
+        className="bg-[#1e293b] text-white px-3 py-1.5 text-[9px] font-black uppercase hover:bg-[#00B4D8] transition-all flex items-center gap-2"
+      >
+        <Building2 size={14}/> Editar
+      </button>
+    )}
+    
+  </div>
 </td>
-                    </tr>
+</tr>
                   );
                 })}
               </tbody>

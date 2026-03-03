@@ -19,7 +19,7 @@ interface ObraVista extends Obra {
   tieneCotizacionAprobada?: boolean;
 }
 
-export const ObrasTab = () => {
+export const ObrasTab = ({ onNavigateToSalidas }: { onNavigateToSalidas?: (obra: any) => void }) => {
   const [obras, setObras] = useState<ObraVista[]>([]);
   const [inventario, setInventario] = useState<any[]>([]);
   const [usuarios, setUsuarios] = useState<UsuarioSistema[]>([]); 
@@ -50,33 +50,31 @@ export const ObrasTab = () => {
 // Cambia el .filter al final del mapeo (Línea 65 aprox.)
 
 const obrasMapeadas = (dataObras || [])
-  .map(o => {
-    const clienteOriginal = dataClientes?.find(c => c.id === o.cliente_id);
-    // Buscamos la cotización aprobada
-    // 1. Buscamos la cotización aprobada específicamente para este proyecto
-const cotizacionOriginal = dataCotizaciones?.find(cot => 
-  cot.cliente_id === o.cliente_id && 
-  cot.estado === 'Aprobado' &&
-  // Si tienes el campo descripcion_trabajo o monto_total, úsalos para validar que es la correcta
-  (o.nombre_obra.includes(cot.clientes?.nombre_cliente || ''))
-);
+        .map(o => {
+          const clienteOriginal = dataClientes?.find(c => c.id === o.cliente_id);
+          // Buscamos la cotización aprobada o la que recién se marcó como "Obra Terminada"
+          const cotizacionOriginal = dataCotizaciones?.find(cot => 
+            cot.cliente_id === o.cliente_id && 
+            (cot.estado === 'Aprobado' || cot.estado === 'Obra Terminada') &&
+            (o.nombre_obra.includes(cot.clientes?.nombre_cliente || ''))
+          );
 
-return { 
-  ...o, 
-  cliente_nombre: clienteOriginal?.nombre_cliente || o.clientes?.nombre_cliente || 'Desconocido',
-  direccion_cliente: clienteOriginal?.direccion || 'Sin dirección registrada',
-  ubicacion_link: clienteOriginal?.ubicacion_link || '',
-  descripcion_trabajo: cotizacionOriginal?.descripcion_trabajo || 'Sin descripción detallada.',
-  nota: cotizacionOriginal?.nota || 'Sin notas adicionales.',
-  fecha_inicio: cotizacionOriginal?.fecha_emision || o.fecha_inicio,
-  // Esta marca es la que limpiará tu lista
-  tieneCotizacionAprobada: !!cotizacionOriginal
-};
-  })
-  // CAMBIA ESTA LÍNEA: Solo mostrar si tiene una cotización aprobada ACTIVA
-  .filter(o => o.estado !== 'Finalizada' && o.tieneCotizacionAprobada === true); 
+          return { 
+            ...o, 
+            cliente_nombre: clienteOriginal?.nombre_cliente || o.clientes?.nombre_cliente || 'Desconocido',
+            direccion_cliente: clienteOriginal?.direccion || 'Sin dirección registrada',
+            ubicacion_link: clienteOriginal?.ubicacion_link || '',
+            descripcion_trabajo: cotizacionOriginal?.descripcion_trabajo || 'Sin descripción detallada.',
+            nota: cotizacionOriginal?.nota || 'Sin notas adicionales.',
+            fecha_inicio: cotizacionOriginal?.fecha_emision || o.fecha_inicio,
+            tieneCotizacionAprobada: !!cotizacionOriginal,
+            estadoCotizacion: cotizacionOriginal?.estado // Guardamos el estado para validar
+          };
+        })
+        // CAMBIO: Mostrar mientras tenga cotización y NO esté finalizada por completo en finanzas
+        .filter(o => o.tieneCotizacionAprobada === true && o.estadoCotizacion !== 'Finalizado'); 
 
-setObras(obrasMapeadas);
+      setObras(obrasMapeadas);
     } catch (e) { 
       console.error(e); 
     } finally { 
@@ -89,19 +87,59 @@ setObras(obrasMapeadas);
   }, []);
 
   const handleFinalizarObra = async (id: number) => {
-    if (!window.confirm("¿Confirmar cierre de obra? Esto enviará el proyecto a revisión final.")) return;
+    if (!window.confirm("¿Confirmar cierre de obra? Esto enviará el listado oficial a la bandeja de cotizaciones.")) return;
     setProcesandoAccion(true);
     try {
+      // 1. Cambiamos el estado de la obra a Finalizada
       await obrasService.finalizarObra(id);
+      
+      // 2. Buscamos la cotización origen para marcarla como 'Obra Terminada'
+      const obra = obras.find(o => o.id === id);
+      if (obra) {
+          // Buscamos la cotización asociada al cliente que esté aprobada
+          const cots = await finanzasService.listarCotizacionesTodas();
+          // NOTA: Usamos find() asumiendo que es la cotización activa de ese cliente
+          const cotOrigen = cots.find(c => c.cliente_id === obra.cliente_id && c.estado === 'Aprobado');
+          
+          if (cotOrigen && cotOrigen.id) {
+              await finanzasService.actualizarEstadoCotizacion(cotOrigen.id, 'Obra Terminada');
+          }
+      }
+
       await cargarDatos();
-      alert("✅ Obra oficializada. Pendiente de revisión en la bandeja de gestión.");
+      alert("✅ Obra finalizada. El listado oficial de materiales ya está disponible en la sección de Clientes.");
     } catch (e) {
       alert("Error al finalizar la obra.");
     } finally {
       setProcesandoAccion(false);
     }
   };
+const handleRetomarObra = async (id: number) => {
+    if (!window.confirm("¿Deseas retomar esta obra y cancelar su envío a bandeja?")) return;
+    setProcesandoAccion(true);
+    try {
+      // 1. Regresamos la obra a En proceso
+      await obrasService.actualizar(id, { estado: 'En proceso' });
+      
+      // 2. Buscamos la cotización en 'Obra Terminada' y la regresamos a 'Aprobado'
+      const obra = obras.find(o => o.id === id);
+      if (obra) {
+          const cots = await finanzasService.listarCotizacionesTodas();
+          const cotOrigen = cots.find(c => c.cliente_id === obra.cliente_id && c.estado === 'Obra Terminada');
+          
+          if (cotOrigen && cotOrigen.id) {
+              await finanzasService.actualizarEstadoCotizacion(cotOrigen.id, 'Aprobado');
+          }
+      }
 
+      await cargarDatos();
+      alert("✅ Obra retomada. Vuelve a estar en estado de lectura/salida.");
+    } catch (e) {
+      alert("Error al retomar la obra.");
+    } finally {
+      setProcesandoAccion(false);
+    }
+  };
   // ❌ LA FUNCIÓN DE BORRAR FUE ELIMINADA. SOLO LECTURA.
 
   const handleIngresoMaterial = async (form: any, prodSelect: any) => {
@@ -197,10 +235,12 @@ setObras(obrasMapeadas);
                      <div className="flex justify-center gap-2">
                        <button 
                          disabled={o.estado === 'Finalizada'}
-                         onClick={() => { setObraSeleccionada(o); setShowIngresarModal(true); }} 
-                         className="px-3 py-1.5 border border-[#1E293B] text-[#1E293B] text-[9px] font-black uppercase hover:bg-[#00B4D8] hover:border-[#00B4D8] hover:text-white transition-all disabled:opacity-30"
+                         onClick={() => { 
+                           if (onNavigateToSalidas) onNavigateToSalidas(o); 
+                         }} 
+                         className="px-3 py-1.5 border border-[#1E293B] text-[#1E293B] text-[9px] font-black uppercase hover:bg-[#00B4D8] hover:border-[#00B4D8] hover:text-white transition-all shadow-sm disabled:opacity-30"
                        >
-                         Salida / Traslado
+                         Ir a POS Almacén
                        </button>
                        <button 
                          onClick={() => { setObraSeleccionada(o); setShowVerMateriales(true); }} 
@@ -220,10 +260,16 @@ setObras(obrasMapeadas);
                           Terminar Obra
                         </button>
                       ) : (
-                        <div className="flex flex-col items-center">
+                        <div className="flex flex-col items-center gap-2">
                           <span className="text-blue-500 font-black text-[9px] uppercase italic flex items-center gap-1">
                             <CheckCircle2 size={12}/> Validando...
                           </span>
+                          <button 
+                            onClick={() => handleRetomarObra(o.id!)} 
+                            className="text-slate-400 hover:text-red-500 text-[9px] font-black uppercase underline transition-colors"
+                          >
+                            Retomar
+                          </button>
                         </div>
                       )}
                       {/* ❌ BOTÓN TRASH ELIMINADO PARA SIEMPRE */}

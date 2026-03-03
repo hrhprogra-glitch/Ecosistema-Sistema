@@ -17,7 +17,7 @@ export interface UsuarioSistema {
   email: string;
   password?: string;
   username?: string;
-  role: 'admin' | 'trabajador'; 
+  role: 'admin' | 'supervisor' | 'trabajador'; // <-- Añadido 'supervisor'
   full_name: string;
   permisos?: string[];
 }
@@ -27,7 +27,8 @@ export interface CotizacionHistorial {
   cliente_id: number;
   fecha_emision: string;
   monto_total: number;
-  estado: 'Pendiente' | 'Aprobado' | 'Rechazado' | 'Parcial' | 'Completado';
+  // Añadimos 'Obra Terminada' y 'Finalizado'
+  estado: 'Pendiente' | 'Aprobado' | 'Rechazado' | 'Parcial' | 'Completado' | 'Obra Terminada' | 'Finalizado'; 
   nota?: string;
   detalles?: any[]; 
   descripcion_trabajo?: string; 
@@ -57,6 +58,7 @@ export interface Obra {
   fecha_inicio?: string;
   materiales_asignados?: any[];
   trabajadores_asignados?: any[];
+  historial_movimientos?: any[]; // <--- AÑADE ESTA LÍNEA
   created_at?: string;
   nota?: string;                 // <-- AÑADIDO
   descripcion_trabajo?: string;  // <-- AÑADIDO
@@ -157,7 +159,7 @@ export const obrasService = {
   async finalizarObra(id: number) {
     const { data, error } = await supabase
       .from('obras')
-      .update({ estado: 'Finalizada', fecha_termino: new Date().toISOString() })
+      .update({ estado: 'Finalizada' })
       .eq('id', id);
     if (error) throw error;
     return data;
@@ -166,8 +168,14 @@ export const obrasService = {
 
 // --- SERVICIO DE USUARIOS ---
 export const usuariosService = {
-  async validarUsuario(username: string, pass: string) {
-    const { data, error } = await supabase.from('usuarios').select('*').eq('username', username).eq('password', pass).single();
+  async validarUsuario(email: string, pass: string) {
+    const { data, error } = await supabase
+      .from('usuarios')
+      .select('*')
+      .eq('email', email)
+      .eq('password', pass)
+      .single();
+      
     if (error || !data) return null;
     return data as UsuarioSistema;
   },
@@ -192,7 +200,6 @@ export const usuariosService = {
     return true;
   }
 };
-
 // --- SERVICIO DE FINANZAS ---
 export const finanzasService = {
   async registrarCotizacion(cotizacion: CotizacionHistorial) {
@@ -205,6 +212,18 @@ export const finanzasService = {
     if (error) throw error;
     return data;
   },
+
+  // ---> NUEVA FUNCIÓN AGREGADA (PASO 1) <---
+  async listarCotizacionesFinalizadas() {
+    const { data, error } = await supabase
+      .from('cotizaciones_historial')
+      .select('*, clientes(nombre_cliente, direccion, ubicacion_link), pagos(*)')
+      .eq('estado', 'Finalizado')
+      .order('created_at', { ascending: false });
+    if (error) throw error;
+    return data;
+  },
+  // ------------------------------------------
   
   // ---> CORRECCIÓN PRINCIPAL AQUÍ <---
   async registrarPago(cotizacionId: number, monto: number, metodo: string) {
