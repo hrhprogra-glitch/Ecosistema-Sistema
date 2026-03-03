@@ -77,7 +77,7 @@ const envKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 // Si Netlify falla en leer el entorno, usará estas cadenas directamente.
 // REEMPLAZA LOS TEXTOS ENTRE COMILLAS CON TUS DATOS REALES DE SUPABASE
 const supabaseUrl = envUrl || "https://nnoujhevzfylxnygccle.supabase.co";
-const supabaseKey = envKey || "sb_publishable_2-kYi2TQ_rTlj0DnBTSpFw_m7FbEKmi";
+const supabaseKey = envKey || "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5ub3VqaGV2emZ5bHhueWdjY2xlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzEwNDU0MDIsImV4cCI6MjA4NjYyMTQwMn0.DggUMTb1G6TRkfOBzknNNp8WnVA-yBzxmErGwsKREME";
 
 // 3. Inicialización blindada
 if (!supabaseUrl || !supabaseKey) {
