@@ -182,36 +182,47 @@ export const obrasService = {
   }
 };
 
-// --- SERVICIO DE USUARIOS ---
-export const usuariosService = {
-  async validarUsuario(email: string, pass: string) {
-    const { data, error } = await supabase
-      .from('usuarios')
-      .select('*')
-      .eq('email', email)
-      .eq('password', pass)
-      .single();
-      
-    if (error || !data) return null;
-    return data as UsuarioSistema;
-  },
-  async listar() {
-    const { data, error } = await supabase.from('usuarios').select('*').order('id', { ascending: false });
+// --- SERVICIO DE AUTENTICACIÓN (ADMIN) ---
+export const authAdminService = {
+  async iniciarSesion(email: string, pass: string) {
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email: email,
+      password: pass,
+    });
     if (error) throw error;
-    return data as UsuarioSistema[];
+    return data.session;
   },
-  async crear(usuario: any) {
-    const { data, error } = await supabase.from('usuarios').insert([usuario]).select();
+
+  async cerrarSesion() {
+    const { error } = await supabase.auth.signOut();
+    if (error) throw error;
+  },
+
+  async obtenerSesionActual() {
+    const { data: { session } } = await supabase.auth.getSession();
+    return session;
+  }
+};
+
+// --- SERVICIO DE EMPLEADOS (PERSONAL OPERATIVO) ---
+export const empleadosService = {
+  async listar() {
+    const { data, error } = await supabase.from('empleados').select('*').order('full_name', { ascending: true });
+    if (error) throw error;
+    return data;
+  },
+  async crear(empleado: any) {
+    const { data, error } = await supabase.from('empleados').insert([empleado]).select();
     if (error) throw error;
     return data[0];
   },
-  async actualizar(id: number, usuario: any) {
-    const { data, error } = await supabase.from('usuarios').update(usuario).eq('id', id).select();
+  async actualizar(id: number, empleado: any) {
+    const { data, error } = await supabase.from('empleados').update(empleado).eq('id', id).select();
     if (error) throw error;
     return data[0];
   },
   async eliminar(id: number) {
-    const { error } = await supabase.from('usuarios').delete().eq('id', id);
+    const { error } = await supabase.from('empleados').delete().eq('id', id);
     if (error) throw error;
     return true;
   }

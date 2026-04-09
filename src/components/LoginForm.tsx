@@ -1,7 +1,7 @@
 // src/components/LoginForm.tsx
 import { useState } from 'react';
 import { ArrowRight, Loader2, AlertCircle } from 'lucide-react';
-import { usuariosService } from '../services/supabase';
+import { authAdminService } from '../services/supabase';
 
 export const LoginForm = ({ onLogin }: { onLogin: (rol: string, usuario: any) => void }) => {
   const [email, setEmail] = useState('');
@@ -21,24 +21,24 @@ export const LoginForm = ({ onLogin }: { onLogin: (rol: string, usuario: any) =>
     setError('');
 
     try {
-      const usuarioData = await usuariosService.validarUsuario(email, password);
+      // NUEVA LÓGICA DE ALTA SEGURIDAD (Supabase Auth nativo)
+      const session = await authAdminService.iniciarSesion(email, password);
 
-      if (usuarioData) {
-        // AMBOS (admin y supervisor) van al AdminDashboard ('admin')
-        // El trabajador va a su panel de empleado
-        const rolNormalizado = (usuarioData.role === 'admin' || usuarioData.role === 'supervisor') ? 'admin' : 'empleado'; 
-        
-        onLogin(rolNormalizado, { 
-          id: usuarioData.id, 
-          nombre: usuarioData.full_name || usuarioData.username || usuarioData.email,
-          role: usuarioData.role // Pasamos el rol real a la sesión
+      if (session) {
+        // Si Supabase aprueba el JWT, ES un administrador/supervisor oficial.
+        // Los empleados de campo ahora son solo entidades de la BD, no inician sesión.
+        onLogin('admin', { 
+          id: session.user.id, 
+          nombre: session.user.email,
+          role: 'admin' // Acceso al núcleo del sistema
         });
       } else {
-        setError('Credenciales incorrectas o correo no registrado.');
+        setError('Credenciales inválidas. Acceso denegado.');
       }
-    } catch (err) {
-      console.error("Error en autenticación:", err);
-      setError('Error de conexión con el servidor. Intente nuevamente.');
+    } catch (err: any) {
+      console.error("Fallo estructural en Auth:", err);
+      // Supabase devuelve mensajes de error específicos (ej. "Invalid login credentials")
+      setError(err.message || 'Error al validar credenciales de seguridad.');
     } finally {
       setLoading(false);
     }
