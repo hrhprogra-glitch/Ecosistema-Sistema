@@ -7,16 +7,9 @@ yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
 
-# Dependencias y Empaquetado (Square Structure)
-node_modules/
-dist/
-dist-ssr/
-*.zip
-
-# Variables de Entorno y Seguridad (CRÍTICO)
-.env
-.env.*
-.env.local
+node_modules
+dist
+dist-ssr
 *.local
 
 # Editor directories and files

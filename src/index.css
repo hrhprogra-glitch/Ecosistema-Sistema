@@ -1,64 +1,72 @@
 /* src/index.css */
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
 @import "tailwindcss";
 
+/* 1. EXTENSIÓN DEL TEMA EN TAILWIND V4 */
 @theme {
-  /* --- PALETA CORPORATIVA: AQUA, BLANCO Y GRIS SLATE --- */
+  --color-eco-celeste: #e0f2fe; 
+  --color-eco-azul: #bae6fd;
+  --color-eco-blanco: #ffffff;
+  --color-eco-gris-claro: #f9fafb;
+  --color-eco-gris-borde: #e5e7eb;
+  --color-eco-oscuro: #374151;
   
-  /* Fondos y Superficies */
-  --color-eco-bg: #f1f5f9; /* Gris muy sutil para el fondo principal (Slate 50) */
-  --color-eco-surface: #ffffff; /* Blanco puro para tarjetas y tablas */
-  --color-eco-sidebar: #1e293b; /* Gris oscuro corporativo (Slate 800) para el Sidebar */
-  --color-eco-border: #e2e8f0; /* Bordes suaves */
-  
-  /* Textos */
-  --color-eco-text-primary: #334155; /* Slate 700 */
-  --color-eco-text-secondary: #64748b; /* Slate 500 */
-  
-  /* Color de Marca: Aqua Cielo */
-  --color-eco-accent: #00B4D8; 
-  --color-eco-accent-hover: #0096b4; 
-  --color-eco-accent-light: #e0f7fa;
-
-  --font-sans: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  /* Inyectamos los colores al sistema principal de Tailwind */
+  --color-primary-light: var(--color-eco-celeste);
+  --color-primary-dark: var(--color-eco-oscuro);
 }
 
-/* Regla global: cursor "manito" para TODO lo interactivo */
+/* 2. VARIABLES GLOBALES DE APLICACIÓN */
+:root {
+  background-color: var(--color-eco-blanco);
+  color: var(--color-eco-oscuro);
+}
+
+/* 3. ESTILOS BASE (SUAVIZADO) */
 @layer base {
-  button, a, select, input[type="checkbox"], input[type="radio"], [role="button"], summary {
-    cursor: pointer !important;
+  html {
+    -webkit-font-smoothing: antialiased;
+    scroll-behavior: smooth;
   }
-  
-  input[type="text"], input[type="number"], input[type="password"], textarea {
-    cursor: text;
+  body {
+    /* Forzamos el color de fondo y texto base */
+    @apply bg-[var(--color-eco-blanco)] text-[var(--color-eco-oscuro)];
+    margin: 0;
   }
 }
 
-body {
-  background-color: var(--color-eco-bg);
-  color: var(--color-eco-text-primary);
-}
-
+/* 4. COMPONENTES ECOSISTEMA (SQUARE & FLAT CONTRAST) */
 @layer components {
-  /* Botón primario Aqua Cielo */
-  .clean-btn-primary {
-    @apply bg-eco-accent text-white text-[14px] font-medium px-4 py-2 rounded-md
-           hover:bg-eco-accent-hover transition-all flex items-center gap-2 justify-center shadow-sm;
+  .btn-ecosistema {
+    /* Usamos corchetes para inyectar la variable directa si Tailwind falla en generar la clase corta */
+    @apply px-6 py-3 font-bold uppercase tracking-tighter rounded-none transition-all duration-300 cursor-pointer border;
+    background-color: var(--color-eco-celeste);
+    color: var(--color-eco-oscuro);
+    border-color: rgba(55, 65, 81, 0.1); /* eco-oscuro al 10% */
   }
 
-  /* Botón secundario Blanco/Gris */
-  .clean-btn-secondary {
-    @apply bg-white text-gray-700 border border-gray-300 text-[14px] font-medium px-4 py-2 rounded-md
-           hover:bg-gray-50 transition-all flex items-center gap-2 justify-center shadow-sm;
+  .btn-ecosistema:hover {
+    background-color: var(--color-eco-azul);
   }
 
-  /* Cabeceras de tabla corporativas limpias */
-  .clean-table-header {
-    @apply text-left text-[12px] font-semibold text-gray-500 uppercase tracking-wider px-4 py-3 border-y border-eco-border bg-gray-50/50;
+  .btn-ecosistema:active {
+    transform: scale(0.95);
   }
-  
-  /* Filas de tabla */
-  .clean-table-row {
-    @apply border-b border-gray-100 hover:bg-eco-accent-light/40 transition-colors duration-150 bg-white;
+
+  .card-ecosistema {
+    @apply rounded-none overflow-hidden border;
+    background-color: var(--color-eco-blanco);
+    border-color: var(--color-eco-gris-borde);
+  }
+
+  .input-ecosistema {
+    @apply w-full px-4 py-3 rounded-none outline-none transition-all duration-300 border;
+    background-color: var(--color-eco-gris-claro);
+    border-color: var(--color-eco-gris-borde);
+    color: var(--color-eco-oscuro);
+  }
+
+  .input-ecosistema:focus {
+    border-color: var(--color-eco-azul);
+    background-color: var(--color-eco-blanco);
   }
 }

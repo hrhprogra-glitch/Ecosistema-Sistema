@@ -1,11 +1,13 @@
 import { defineConfig } from 'vite'
-import react from '@vitejs/plugin-react-swc'
-import tailwindcss from '@tailwindcss/vite' // <-- 1. Importa el plugin
+import react, { reactCompilerPreset } from '@vitejs/plugin-react'
+import babel from '@rolldown/plugin-babel'
+import tailwindcss from '@tailwindcss/vite' // <-- ESTO ES VITAL PARA EL DISEÑO
 
 // https://vite.dev/config/
 export default defineConfig({
   plugins: [
     react(),
-    tailwindcss(), // <-- 2. Agrégalo aquí
+    babel({ presets: [reactCompilerPreset()] }),
+    tailwindcss(), // <-- AQUÍ ACTIVAMOS TAILWIND
   ],
 })
