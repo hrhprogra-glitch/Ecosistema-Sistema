@@ -30,10 +30,11 @@ export default function Sidebar({ isOpen, currentTab, setCurrentTab }: SidebarPr
               key={item.id}
               onClick={() => setCurrentTab(item.id)}
               className={`
-                w-full flex items-center gap-4 p-3 transition-all duration-300 rounded-none border-l-2
+                w-full flex items-center gap-4 p-3 transition-all duration-300 rounded-none
                 ${isActive 
-                  ? 'bg-eco-celeste text-eco-oscuro border-eco-oscuro font-semibold' 
-                  : 'text-eco-gris border-transparent hover:bg-eco-azul/20 hover:text-eco-oscuro'}
+                  /* El fondo celeste ahora es fuerte, el texto oscuro garantiza accesibilidad */
+                  ? 'bg-eco-celeste text-eco-oscuro font-bold shadow-sm' 
+                  : 'text-eco-oscuro/70 hover:bg-eco-celeste/20 hover:text-eco-oscuro'}
               `}
             >
               <item.icon size={20} strokeWidth={isActive ? 2.5 : 2} />

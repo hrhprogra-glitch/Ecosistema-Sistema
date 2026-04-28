@@ -9,9 +9,10 @@ export default function HistorialSession() {
   return (
     <div className="flex flex-col gap-8 animate-in fade-in duration-700">
       
-      <header>
+      {/* Anclaje visual Square: Borde lateral celeste grueso e ícono vibrante */}
+      <header className="border-l-4 border-eco-celeste pl-4">
         <h2 className="text-2xl font-bold text-eco-oscuro uppercase tracking-tighter flex items-center gap-3">
-          <History size={28} className="text-eco-azul" />
+          <History size={28} className="text-eco-celeste drop-shadow-sm" />
           Auditoría y Retornos
         </h2>
         <p className="text-sm text-eco-gris mt-1">Trazabilidad completa de movimientos y devoluciones.</p>

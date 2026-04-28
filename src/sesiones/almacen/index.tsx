@@ -14,10 +14,11 @@ export default function AlmacenSession() {
   return (
     <div className="flex flex-col gap-8 animate-in fade-in duration-700">
       
-      <header className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+      {/* Anclaje visual Square: Borde lateral celeste grueso e ícono vibrante */}
+      <header className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-l-4 border-eco-celeste pl-4">
         <div>
           <h2 className="text-2xl font-bold text-eco-oscuro uppercase tracking-tighter flex items-center gap-3">
-            <PackageSearch size={28} className="text-eco-azul" />
+            <PackageSearch size={28} className="text-eco-celeste drop-shadow-sm" />
             Almacén Master
           </h2>
           <p className="text-sm text-eco-gris mt-1">Gestión técnica de consumibles y activos.</p>

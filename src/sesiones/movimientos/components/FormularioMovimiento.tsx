@@ -4,7 +4,7 @@ import { PackageMinus, User, FileText, Wrench } from 'lucide-react';
 export default function FormularioMovimiento() {
   return (
     <div className="flex flex-col h-full">
-      <div className="p-6 border-b border-eco-gris-borde bg-eco-celeste/20">
+      <div className="p-6 border-b-4 border-eco-celeste bg-eco-celeste/10">
         <h3 className="text-lg font-bold uppercase tracking-tight text-eco-oscuro">
           Nueva Transacción
         </h3>

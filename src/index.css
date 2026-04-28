@@ -3,12 +3,13 @@
 
 /* 1. EXTENSIÓN DEL TEMA EN TAILWIND V4 */
 @theme {
-  --color-eco-celeste: #e0f2fe; 
-  --color-eco-azul: #bae6fd;
+  /* HIGH CONTRAST PALETTE */
+  --color-eco-celeste: #38bdf8; /* Celeste vibrante y notorio */
+  --color-eco-azul: #0284c7;    /* Azul más profundo para interacciones */
   --color-eco-blanco: #ffffff;
-  --color-eco-gris-claro: #f9fafb;
-  --color-eco-gris-borde: #e5e7eb;
-  --color-eco-oscuro: #374151;
+  --color-eco-gris-claro: #f3f4f6; /* Contraste sutil para fondos secundarios */
+  --color-eco-gris-borde: #d1d5db; /* Borde más definido (Square design) */
+  --color-eco-oscuro: #111827;     /* Texto casi negro para máxima legibilidad */
   
   /* Inyectamos los colores al sistema principal de Tailwind */
   --color-primary-light: var(--color-eco-celeste);
@@ -46,6 +47,7 @@
 
   .btn-ecosistema:hover {
     background-color: var(--color-eco-azul);
+    color: var(--color-eco-blanco);
   }
 
   .btn-ecosistema:active {
