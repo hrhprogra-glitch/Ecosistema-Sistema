@@ -1,86 +1,86 @@
-// src/sesiones/movimientos/components/FormularioMovimiento.tsx
-import { PackageMinus, User, FileText, Wrench } from 'lucide-react';
+import { useState, useRef, useEffect } from 'react';
+import { Search, Plus, ArrowUpRight, ArrowDownLeft } from 'lucide-react';
 
 export default function FormularioMovimiento() {
+  const [tipoMovimiento, setTipoMovimiento] = useState<'SALIDA' | 'RETORNO'>('SALIDA');
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  // UX: Auto-focus al cargar o al cambiar de modo para evitar uso del mouse
+  useEffect(() => {
+    inputRef.current?.focus();
+  }, [tipoMovimiento]);
+
   return (
-    <div className="flex flex-col h-full">
-      <div className="p-6 border-b-4 border-eco-celeste bg-eco-celeste/10">
-        <h3 className="text-lg font-bold uppercase tracking-tight text-eco-oscuro">
-          Nueva Transacción
-        </h3>
+    <div className="card-ecosistema bg-eco-blanco shadow-xl shadow-eco-oscuro/5 h-full flex flex-col p-5 border-t-4 border-eco-oscuro">
+      
+      {/* Selectores de Tipo (High Contrast) */}
+      <div className="flex gap-2 mb-6 shrink-0">
+        <button 
+          onClick={() => setTipoMovimiento('SALIDA')}
+          className={`flex-1 py-3 text-xs font-black uppercase tracking-widest transition-all duration-200 border-2 ${tipoMovimiento === 'SALIDA' ? 'bg-eco-oscuro border-eco-oscuro text-eco-blanco shadow-md' : 'bg-transparent border-eco-gris-borde text-eco-gris hover:border-eco-oscuro/50'}`}
+        >
+          <ArrowUpRight size={16} className="inline mr-2" /> Salida
+        </button>
+        <button 
+          onClick={() => setTipoMovimiento('RETORNO')}
+          className={`flex-1 py-3 text-xs font-black uppercase tracking-widest transition-all duration-200 border-2 ${tipoMovimiento === 'RETORNO' ? 'bg-emerald-600 border-emerald-600 text-white shadow-md' : 'bg-transparent border-eco-gris-borde text-eco-gris hover:border-emerald-600/50'}`}
+        >
+          <ArrowDownLeft size={16} className="inline mr-2" /> Retorno
+        </button>
       </div>
 
-      <form className="p-6 flex flex-col gap-6">
-        
-        {/* Selector de Tipo de Movimiento (Botones tipo Tab) */}
-        <div className="space-y-2">
-          <label className="text-xs font-bold text-eco-gris uppercase tracking-wider">Tipo de Operación</label>
-          <div className="grid grid-cols-2 gap-4">
-            <label className="cursor-pointer">
-              <input type="radio" name="tipo" value="SALIDA" className="peer sr-only" defaultChecked />
-              <div className="p-4 border border-eco-gris-borde text-center font-medium text-eco-gris peer-checked:bg-eco-oscuro peer-checked:text-eco-blanco peer-checked:border-eco-oscuro transition-all duration-300 rounded-none active:scale-[0.98]">
-                SALIDA (Entrega)
-              </div>
-            </label>
-            <label className="cursor-pointer">
-              <input type="radio" name="tipo" value="DEVOLUCION" className="peer sr-only" />
-              <div className="p-4 border border-eco-gris-borde text-center font-medium text-eco-gris peer-checked:bg-eco-azul peer-checked:text-eco-oscuro peer-checked:border-eco-azul transition-all duration-300 rounded-none active:scale-[0.98]">
-                DEVOLUCIÓN (Retorno)
-              </div>
-            </label>
+      {/* Campos de Ingreso Rápido */}
+      <div className="flex flex-col gap-5 flex-1">
+        {/* Input de Personal (Destino/Origen) */}
+        <div>
+          <label className="block text-[10px] font-bold text-eco-gris uppercase tracking-wider mb-1">
+            {tipoMovimiento === 'SALIDA' ? 'Asignar a (DNI / Nombre)' : 'Devuelto por (DNI / Nombre)'}
+          </label>
+          <input 
+            type="text" 
+            placeholder="Ej. Juan Pérez..." 
+            className="w-full bg-eco-gris-claro border border-eco-gris-borde text-eco-oscuro font-bold px-3 py-2.5 outline-none focus:border-eco-celeste focus:ring-1 focus:ring-eco-celeste transition-all"
+          />
+        </div>
+
+        {/* Input de Producto - Visualmente Dominante */}
+        <div className="mt-2">
+          <label className="block text-[10px] font-bold text-eco-gris uppercase tracking-wider mb-1">SKU o Código de Barras</label>
+          <div className="relative">
+            <Search size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-eco-gris" />
+            <input 
+              ref={inputRef}
+              type="text" 
+              placeholder="Escanea o escribe..." 
+              className="w-full bg-white border-2 border-eco-oscuro text-eco-oscuro font-black text-lg px-10 py-4 outline-none focus:border-eco-celeste transition-colors shadow-inner"
+            />
           </div>
         </div>
 
-        {/* Fila de Selección (Trabajador y Producto) */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div className="space-y-2 relative">
-            <label className="text-xs font-bold text-eco-gris uppercase tracking-wider flex items-center gap-2">
-              <User size={14} /> Seleccionar Personal
-            </label>
-            {/* Aquí luego conectaremos un buscador predictivo (Select) */}
-            <select className="input-ecosistema cursor-pointer">
-              <option value="">Buscar por DNI o Nombre...</option>
-              <option value="1">71234567 - Carlos Mendoza</option>
-              <option value="2">45890123 - Elena Rojas</option>
-            </select>
+        {/* Cantidad y Botón de Acción */}
+        <div className="grid grid-cols-5 gap-4 mt-2">
+          <div className="col-span-2">
+            <label className="block text-[10px] font-bold text-eco-gris uppercase tracking-wider mb-1">Cant.</label>
+            <input 
+              type="number" 
+              defaultValue={1}
+              min={1}
+              className="w-full bg-white border border-eco-gris-borde text-eco-oscuro font-bold text-center text-lg px-3 py-3 outline-none focus:border-eco-celeste"
+            />
           </div>
-
-          <div className="space-y-2 relative">
-            <label className="text-xs font-bold text-eco-gris uppercase tracking-wider flex items-center gap-2">
-              <Wrench size={14} /> Seleccionar Ítem
-            </label>
-            <select className="input-ecosistema cursor-pointer">
-              <option value="">Buscar SKU o Nombre...</option>
-              <option value="1">HER-001 - Taladro Percutor</option>
-              <option value="2">CON-045 - Discos de Corte</option>
-            </select>
+          <div className="col-span-3 flex items-end">
+            <button className="w-full h-[54px] bg-eco-celeste hover:bg-sky-400 text-eco-oscuro font-black uppercase tracking-widest text-xs flex items-center justify-center gap-2 transition-colors shadow-sm">
+              <Plus size={16} /> Agregar
+            </button>
           </div>
         </div>
+      </div>
+      
+      {/* Refuerzo UX de Velocidad */}
+      <p className="text-[10px] text-eco-gris text-center mt-6 font-medium flex items-center justify-center gap-1">
+        <kbd className="bg-eco-gris-claro px-1.5 py-0.5 rounded border border-eco-gris-borde font-mono font-bold text-eco-oscuro">Enter</kbd> para agregar al lote rápidamente
+      </p>
 
-        {/* Cantidad y Notas */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <div className="space-y-2">
-            <label className="text-xs font-bold text-eco-gris uppercase tracking-wider">Cantidad</label>
-            <input type="number" min="1" defaultValue="1" className="input-ecosistema text-center font-bold text-lg" required />
-          </div>
-
-          <div className="space-y-2 md:col-span-2">
-            <label className="text-xs font-bold text-eco-gris uppercase tracking-wider flex items-center gap-2">
-              <FileText size={14} /> Observaciones (Opcional)
-            </label>
-            <input type="text" placeholder="Ej: Herramienta entregada sin estuche..." className="input-ecosistema" />
-          </div>
-        </div>
-
-        {/* Botón de Acción Principal */}
-        <div className="mt-4 pt-6 border-t border-eco-gris-borde flex justify-end">
-          <button type="submit" className="btn-ecosistema w-full sm:w-auto flex justify-center items-center gap-2 text-lg">
-            <PackageMinus size={20} />
-            Procesar Transacción
-          </button>
-        </div>
-
-      </form>
     </div>
   );
 }

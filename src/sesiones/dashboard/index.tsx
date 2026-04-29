@@ -8,32 +8,35 @@ import AlertasStockTable from './components/AlertasStockTable';
 
 export default function DashboardSession() {
   return (
-    <div className="flex flex-col gap-8 animate-in fade-in duration-700">
+    <div className="flex flex-col h-[calc(100vh-6rem)] gap-4 animate-in fade-in duration-700 pb-2">
       
-      {/* Anclaje visual Square: Borde lateral celeste grueso e ícono vibrante */}
-      <header className="border-l-4 border-eco-celeste pl-4">
-        <h2 className="text-2xl font-bold text-eco-oscuro uppercase tracking-tighter flex items-center gap-3">
-          <LayoutDashboard size={28} className="text-eco-celeste drop-shadow-sm" />
+      {/* Header Compacto (Square) */}
+      <header className="border-l-4 border-eco-celeste pl-4 shrink-0">
+        <h2 className="text-xl font-bold text-eco-oscuro uppercase tracking-tighter flex items-center gap-2">
+          <LayoutDashboard size={24} className="text-eco-celeste drop-shadow-sm" />
           Panel de Control
         </h2>
-        <p className="text-sm text-eco-gris mt-1">Resumen operativo, métricas en tiempo real y alertas críticas.</p>
       </header>
 
-      {/* Tarjetas de Métricas (Square Grid) */}
-      <section>
+      {/* Tarjetas de Métricas: Fila superior estática */}
+      <section className="shrink-0">
         <KPICards />
       </section>
 
-      {/* Sección de Analítica Visual (High Contrast) */}
-      <section className="animate-in slide-in-from-bottom-4 duration-1000">
-        <ChartsSection />
-      </section>
+      {/* Contenedor Grid (High Contrast & Suavizado): Gráficos y Tabla en la misma fila */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 flex-1 min-h-0">
+        
+        {/* Gráficos ocupan 2 columnas (El componente ChartsSection ya tiene su propio grid interno) */}
+        <section className="lg:col-span-2 h-full overflow-hidden animate-in slide-in-from-bottom-4 duration-1000">
+          <ChartsSection />
+        </section>
 
-      {/* Tabla de Alertas */}
-      <section className="card-ecosistema p-0 bg-eco-blanco shadow-xl shadow-eco-oscuro/5">
-        <AlertasStockTable />
-      </section>
+        {/* Tabla compacta como panel lateral ocupa 1 columna */}
+        <section className="card-ecosistema p-0 bg-eco-blanco shadow-xl shadow-eco-oscuro/5 h-full flex flex-col overflow-hidden">
+          <AlertasStockTable />
+        </section>
 
+      </div>
     </div>
   );
 }
