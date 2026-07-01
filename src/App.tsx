@@ -47,22 +47,32 @@ export default function App() {
     return (
       <div className="min-h-screen bg-eco-blanco flex items-center justify-center">
         <div className="text-eco-oscuro font-bold uppercase tracking-tighter animate-pulse">
-          Cargando Ecosistema...
+          Cargando ECO-SISTEMA...
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-eco-blanco flex flex-col font-sans selection:bg-eco-azul/30">
+    <div className="h-screen w-full bg-eco-blanco flex flex-col font-sans selection:bg-eco-azul/30 overflow-hidden">
       <Topbar 
         isSidebarOpen={isSidebarOpen} 
         setIsSidebarOpen={setIsSidebarOpen} 
-        userEmail={user?.email || "Invitado@ecosistema.com"}
+        userEmail={user?.email || "Invitado@eco-sistema.com"}
         onLogout={() => supabase.auth.signOut()}
       />
 
-      <div className="flex flex-1 overflow-hidden">
+      {/* Se inyecta 'relative' para contener el Overlay en el contexto correcto */}
+      <div className="flex flex-1 overflow-hidden relative">
+        
+        {/* Overlay de Alto Contraste y Suavizado para Móviles (Estilo Sándwich Profesional) */}
+        {isSidebarOpen && (
+          <div 
+            className="absolute inset-0 bg-eco-oscuro/40 backdrop-blur-sm z-30 sm:hidden transition-opacity duration-500 ease-in-out"
+            onClick={() => setIsSidebarOpen(false)}
+          />
+        )}
+
         <Sidebar 
           isOpen={isSidebarOpen} 
           currentTab={currentTab} 
