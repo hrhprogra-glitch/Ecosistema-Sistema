@@ -16,7 +16,7 @@ export type UnidadMedida = 'UNIDAD' | 'CAJA' | 'METRO' | 'LITRO' | 'KILOGRAMO' |
 
 // 2. Interfaz principal del Producto / Herramienta
 export interface InventarioItem {
-  id: string;                  // UUID generado por Supabase
+  id?: number;                 // ID Numérico autogenerado por Supabase
   codigo_sku: string;          // Código único empresarial (ej: HER-001, MAT-045)
   nombre: string;              // Nombre técnico del ítem
   descripcion?: string;        // Especificaciones técnicas (opcional)
@@ -37,5 +37,5 @@ export interface InventarioItem {
   updated_at?: string;         // Última modificación del registro
 }
 
-// 3. Tipo utilitario para la creación (Omitimos campos que la BD genera sola)
+// 3. Tipo utilitario para la creación
 export type NuevoInventarioItem = Omit<InventarioItem, 'id' | 'created_at' | 'updated_at'>;

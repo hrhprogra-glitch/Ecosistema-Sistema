@@ -71,4 +71,20 @@
     border-color: var(--color-eco-azul);
     background-color: var(--color-eco-blanco);
   }
+
+  /* ==========================================
+     5. RESTRICCIONES DE SEGURIDAD (INTEGRIDAD DE DATOS)
+     ========================================== */
+  /* Oculta las flechas nativas en inputs numéricos del sistema */
+  .no-spinners::-webkit-inner-spin-button, 
+  .no-spinners::-webkit-outer-spin-button { 
+    -webkit-appearance: none; /* Chrome, Safari, Edge, Opera */
+    appearance: none;         /* Estándar W3C */
+    margin: 0; 
+  }
+  
+  .no-spinners {
+    -moz-appearance: textfield; /* Firefox (versiones previas) */
+    appearance: textfield;      /* Estándar W3C */
+  }
 }

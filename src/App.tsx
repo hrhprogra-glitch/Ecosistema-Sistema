@@ -1,10 +1,10 @@
+// src/App.tsx
 import { useState, useEffect } from 'react';
 import { supabase } from './db/supabase';
 
 import Topbar from './layout/Topbar';
 import Sidebar from './layout/Sidebar';
 
-// IMPORTACIÓN DE TUS 5 CARPETAS REALES
 import DashboardSession from './sesiones/dashboard';
 import MovimientosSession from './sesiones/movimientos';
 import AlmacenSession from './sesiones/almacen';
@@ -31,13 +31,13 @@ export default function App() {
     return () => subscription.unsubscribe();
   }, []);
 
-  // ORQUESTADOR EXACTO PARA ALMACÉN
+  // ORQUESTADOR EXACTO: Pasamos setCurrentTab al Historial para permitir el enrutamiento cruzado
   const renderContent = () => {
     switch (currentTab) {
       case 'dashboard':   return <DashboardSession />;
       case 'movimientos': return <MovimientosSession />;
       case 'almacen':     return <AlmacenSession />;
-      case 'historial':   return <HistorialSession />;
+      case 'historial':   return <HistorialSession onNavigate={setCurrentTab} />;
       case 'personal':    return <PersonalSession />;
       default:            return <DashboardSession />;
     }
@@ -62,10 +62,8 @@ export default function App() {
         onLogout={() => supabase.auth.signOut()}
       />
 
-      {/* Se inyecta 'relative' para contener el Overlay en el contexto correcto */}
       <div className="flex flex-1 overflow-hidden relative">
         
-        {/* Overlay de Alto Contraste y Suavizado para Móviles (Estilo Sándwich Profesional) */}
         {isSidebarOpen && (
           <div 
             className="absolute inset-0 bg-eco-oscuro/40 backdrop-blur-sm z-30 sm:hidden transition-opacity duration-500 ease-in-out"

@@ -1,29 +1,30 @@
 // src/sesiones/historial/index.tsx
 import { History } from 'lucide-react';
-
-// 1. Importamos los componentes que acabamos de crear
-import PanelBusquedaFiltros from './components/PanelBusquedaFiltros';
 import TablaHistorialGlobal from './components/TablaHistorialGlobal';
 
-export default function HistorialSession() {
+interface Props {
+  onNavigate?: (tab: string) => void;
+}
+
+export default function HistorialSession({ onNavigate }: Props) {
   return (
     <div className="flex flex-col gap-8 animate-in fade-in duration-700">
       
-      {/* Anclaje visual Square: Borde lateral celeste grueso e ícono vibrante */}
-      <header className="border-l-4 border-eco-celeste pl-4">
-        <h2 className="text-2xl font-bold text-eco-oscuro uppercase tracking-tighter flex items-center gap-3">
-          <History size={28} className="text-eco-celeste drop-shadow-sm" />
-          Auditoría y Retornos
-        </h2>
-        <p className="text-sm text-eco-gris mt-1">Trazabilidad completa de movimientos y devoluciones.</p>
+      <header className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-eco-blanco p-6 border-y border-r border-eco-gris-borde border-l-[12px] border-l-eco-oscuro rounded-none shadow-sm">
+        <div>
+          <h2 className="text-2xl font-black text-eco-oscuro uppercase tracking-tighter flex items-center gap-3 italic">
+            <History size={28} className="text-eco-celeste drop-shadow-sm" />
+            Auditoría de Movimientos
+          </h2>
+          <p className="text-[10px] font-black uppercase tracking-[0.3em] text-eco-gris mt-1">Historial inmutable de transacciones</p>
+        </div>
       </header>
 
-      {/* 2. Integramos los componentes en el contenedor Square */}
-      <div className="card-ecosistema p-0 bg-eco-blanco shadow-xl shadow-eco-oscuro/5">
-        <PanelBusquedaFiltros />
-        <TablaHistorialGlobal />
+      <div className="card-ecosistema p-0 border-0 bg-transparent shadow-none">
+        {/* Inyectamos la función de navegación a la tabla */}
+        <TablaHistorialGlobal onNavigate={onNavigate} />
       </div>
-      
+
     </div>
   );
 }

@@ -1,59 +1,95 @@
-import { ShoppingCart, Trash2, CheckCircle2 } from 'lucide-react';
+// src/sesiones/movimientos/components/ResumenTemporal.tsx
+import { ShoppingCart, Trash2, CheckCircle2, ArrowUpRight, ArrowDownLeft, Loader2, Edit2 } from 'lucide-react';
+import type { ItemLote } from '../index';
 
-export default function ResumenTemporal() {
-  // Mock de ítems temporales en el lote
-  const items = [
-    { id: 1, sku: 'HER-045', nombre: 'Taladro Percutor Bosch 800W', cant: 1, unidad: 'UND' },
-    { id: 2, sku: 'CON-089', nombre: 'Electrodos 6011 1/8"', cant: 5, unidad: 'CAJAS' }
-  ];
+interface ResumenProps {
+  lote: ItemLote[];
+  onQuitar: (temp_id: number) => void;
+  onEditar: (temp_id: number) => void;
+  onVaciar: () => void;
+  onProcesar: () => void;
+  procesando: boolean;
+}
 
+export default function ResumenTemporal({ lote, onQuitar, onEditar, onVaciar, onProcesar, procesando }: ResumenProps) {
   return (
-    <div className="card-ecosistema bg-white shadow-xl shadow-eco-oscuro/5 h-full flex flex-col border border-eco-gris-borde">
+    <div className="card-ecosistema bg-white shadow-xl shadow-eco-oscuro/5 h-full flex flex-col border border-eco-gris-borde rounded-none">
       
-      {/* Cabecera del Lote */}
       <div className="p-4 border-b border-eco-gris-borde flex justify-between items-center bg-eco-gris-claro shrink-0">
-        <h3 className="text-sm font-bold uppercase tracking-tight text-eco-oscuro flex items-center gap-2">
+        <h3 className="text-xs font-black uppercase tracking-widest text-eco-oscuro flex items-center gap-2">
           <ShoppingCart size={18} className="text-eco-celeste" />
-          Lote Actual ({items.length})
+          Cola de Procesamiento ({lote.length})
         </h3>
-        <button className="text-[10px] font-bold text-red-500 hover:text-red-700 uppercase tracking-widest transition-colors">
-          Vaciar Lote
-        </button>
+        {lote.length > 0 && (
+          <button 
+            onClick={onVaciar}
+            disabled={procesando}
+            className="text-[9px] font-black text-red-500 hover:text-red-700 hover:bg-red-50 p-1.5 uppercase tracking-[0.2em] transition-colors border border-transparent hover:border-red-200 disabled:opacity-50"
+          >
+            Vaciar Lote
+          </button>
+        )}
       </div>
 
-      {/* Lista de Movimientos con Scroll Suavizado */}
       <div className="flex-1 overflow-y-auto custom-scrollbar bg-white">
         <table className="w-full text-left border-collapse text-xs">
-          <thead className="sticky top-0 bg-white border-b border-eco-gris-borde z-10 shadow-sm">
-            <tr className="text-eco-gris text-[10px] uppercase tracking-wider">
-              <th className="p-3 pl-4 font-bold">Producto</th>
-              <th className="p-3 font-bold text-center">Cant.</th>
-              <th className="p-3 pr-4 font-bold text-right">Quitar</th>
+          <thead className="sticky top-0 bg-white border-b-2 border-eco-gris-borde z-10 shadow-sm">
+            <tr className="text-eco-oscuro text-[9px] uppercase tracking-[0.2em] font-black">
+              <th className="p-4">Ficha Técnica</th>
+              <th className="p-4 text-center">Operación</th>
+              <th className="p-4 text-right">Acción</th>
             </tr>
           </thead>
           <tbody>
-            {items.map(item => (
-              <tr key={item.id} className="border-b border-eco-gris-borde/40 hover:bg-eco-gris-claro/50 transition-colors group">
-                <td className="p-3 pl-4">
-                  <div className="font-bold text-eco-oscuro text-xs truncate max-w-[200px]">{item.nombre}</div>
-                  <div className="text-[10px] text-eco-gris font-mono mt-0.5">{item.sku}</div>
+            {lote.map((item) => (
+              <tr key={item.temp_id} className="border-b border-eco-gris-borde/40 hover:bg-eco-celeste/10 transition-colors group">
+                <td className="p-4">
+                  <div className="font-black text-eco-oscuro text-[11px] truncate max-w-[220px] uppercase">{item.item_nombre}</div>
+                  <div className="text-[10px] text-eco-gris font-bold mt-1 uppercase tracking-widest">
+                    SKU: <span className="text-eco-celeste font-mono">{item.codigo_sku}</span>
+                  </div>
+                  <div className="text-[9px] text-eco-oscuro font-black mt-2 uppercase tracking-widest bg-eco-gris-claro px-2 py-1 inline-block border border-eco-gris-borde">
+                    A Cargo: {item.trabajador_nombre}
+                  </div>
                 </td>
-                <td className="p-3 text-center">
-                  <span className="text-sm font-black text-eco-oscuro bg-eco-gris-claro px-2 py-1 rounded-sm border border-eco-gris-borde">
-                    {item.cant} <span className="text-[9px] text-eco-gris font-bold ml-0.5">{item.unidad}</span>
+                <td className="p-4 text-center">
+                  <span className={`inline-flex items-center gap-1 px-2 py-1 text-[9px] font-black uppercase tracking-widest border rounded-none ${
+                    item.tipo_movimiento === 'SALIDA' ? 'bg-orange-50 text-orange-700 border-orange-200' : 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                  }`}>
+                    {item.tipo_movimiento === 'SALIDA' ? <ArrowUpRight size={10} /> : <ArrowDownLeft size={10} />}
+                    {item.tipo_movimiento}
                   </span>
+                  <div className="mt-2 text-[14px] font-black text-eco-oscuro">{item.cantidad} UND</div>
                 </td>
-                <td className="p-3 pr-4 text-right">
-                  <button className="text-eco-gris hover:text-red-500 transition-colors p-1">
-                    <Trash2 size={16} />
-                  </button>
+                
+                {/* BOTONES DE ACCIÓN: EDITAR Y ELIMINAR */}
+                <td className="p-4 text-right">
+                  <div className="flex justify-end gap-2">
+                    <button 
+                      onClick={() => onEditar(item.temp_id)}
+                      disabled={procesando}
+                      title="Editar y devolver a Registro"
+                      className="p-2 text-eco-gris bg-eco-gris-claro border border-eco-gris-borde hover:text-white hover:bg-eco-oscuro hover:border-eco-oscuro transition-colors disabled:opacity-50"
+                    >
+                      <Edit2 size={16} />
+                    </button>
+                    <button 
+                      onClick={() => onQuitar(item.temp_id)}
+                      disabled={procesando}
+                      title="Quitar del Lote"
+                      className="p-2 text-eco-gris bg-eco-gris-claro border border-eco-gris-borde hover:text-white hover:bg-red-500 hover:border-red-500 transition-colors disabled:opacity-50"
+                    >
+                      <Trash2 size={16} />
+                    </button>
+                  </div>
                 </td>
+
               </tr>
             ))}
-            {items.length === 0 && (
+            {lote.length === 0 && (
               <tr>
-                <td colSpan={3} className="p-6 text-center text-eco-gris text-[11px] font-medium">
-                  El lote está vacío. Agrega productos desde el formulario.
+                <td colSpan={3} className="py-24 text-center text-eco-gris text-[10px] font-black uppercase tracking-widest">
+                  La cola de procesamiento está vacía.
                 </td>
               </tr>
             )}
@@ -61,11 +97,14 @@ export default function ResumenTemporal() {
         </table>
       </div>
 
-      {/* Botón de Confirmación Fijo (Square) */}
-      <div className="p-4 border-t border-eco-gris-borde bg-eco-blanco shrink-0">
-        <button className="w-full py-4 bg-eco-oscuro hover:bg-black text-eco-celeste font-black uppercase tracking-widest text-sm flex items-center justify-center gap-2 transition-all shadow-lg hover:shadow-xl hover:-translate-y-0.5">
-          <CheckCircle2 size={20} />
-          Procesar Movimientos
+      <div className="p-4 border-t-2 border-eco-gris-borde bg-eco-blanco shrink-0">
+        <button 
+          onClick={onProcesar}
+          disabled={lote.length === 0 || procesando}
+          className="w-full py-4 bg-eco-oscuro text-eco-celeste font-black uppercase tracking-[0.2em] text-[10px] flex items-center justify-center gap-3 transition-all hover:bg-eco-celeste hover:text-eco-oscuro disabled:opacity-50 disabled:hover:bg-eco-oscuro disabled:hover:text-eco-celeste border border-transparent"
+        >
+          {procesando ? <Loader2 size={20} className="animate-spin" /> : <CheckCircle2 size={20} />}
+          {procesando ? 'Procesando Envíos...' : 'Confirmar y Actualizar BD'}
         </button>
       </div>
 
