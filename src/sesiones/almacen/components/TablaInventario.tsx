@@ -1,6 +1,6 @@
 // src/sesiones/almacen/components/TablaInventario.tsx
 import { useEffect, useState } from 'react';
-import { Settings2, Wrench, Package, Loader2, Edit2, Trash2 } from 'lucide-react';
+import { Wrench, Package, Loader2, Edit2, Trash2 } from 'lucide-react';
 import { inventarioService } from '../../../db/supabase';
 import type { InventarioItem } from '../types';
 
